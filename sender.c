@@ -23,6 +23,7 @@
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 
+#include "fuzzotron.h"
 #include "sender.h"
 #include "util.h"
 
@@ -43,7 +44,7 @@ void setup_tcp(int sock){
  * send a char array down a
  * udp socket
 */
-int send_udp(char * host, int port, char * packet, unsigned long packet_len, int ssl){
+int send_udp(char * host, int port, char * packet, unsigned long packet_len){
     int sock = 0;
     ssize_t r;
     struct sockaddr_in serv_addr;
@@ -97,10 +98,10 @@ int send_udp(char * host, int port, char * packet, unsigned long packet_len, int
  *	send a char array down a
  *	tcp socket.
 */
-int send_tcp(char * host, int port, char * packet, unsigned long packet_len, int ssl){
-	int sock = 0;
+int send_tcp(char * host, int port, char * packet, unsigned long packet_len){
+    int sock = 0;
     ssize_t r;
-	struct sockaddr_in serv_addr;
+    struct sockaddr_in serv_addr;
 
 	if((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0){
 		fatal("[!] Error: Could not create socket: %s\n", strerror(errno));
@@ -108,7 +109,7 @@ int send_tcp(char * host, int port, char * packet, unsigned long packet_len, int
 
 	serv_addr.sin_family = AF_INET;
 	serv_addr.sin_port = htons(port);
-	inet_pton(AF_INET, host, &serv_addr.sin_addr);
+    inet_pton(AF_INET, host, &serv_addr.sin_addr);
 
     int c = connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
 	if(c < 0){
@@ -125,7 +126,7 @@ int send_tcp(char * host, int port, char * packet, unsigned long packet_len, int
 	
     setup_tcp(sock); // perform any preliminary setup
     
-    if(ssl){
+    if(fuzz.is_tls){
         // Set up the things for TLS
         int ret;
         SSL *ssl;
@@ -147,6 +148,9 @@ int send_tcp(char * host, int port, char * packet, unsigned long packet_len, int
         ret = SSL_connect(ssl);
         if (ret < 1){
             printf("[!] Error initiating TLS session. Error no: %d\n", SSL_get_error(ssl, ret));
+			SSL_free(ssl);
+			close(sock);
+			SSL_CTX_free(ctx);
             return -1;
         }
 
@@ -157,6 +161,7 @@ int send_tcp(char * host, int port, char * packet, unsigned long packet_len, int
         SSL_free(ssl);
         close(sock);
         SSL_CTX_free(ctx);
+        return 0;
     }
     else{
         r = write(sock, packet, packet_len);
@@ -165,7 +170,13 @@ int send_tcp(char * host, int port, char * packet, unsigned long packet_len, int
         }
     }
 
-    destroy_socket(sock);
+    if(fuzz.destroy){
+        destroy_socket(sock);
+    }
+    else{
+        close(sock);
+    }
+
     return 0;
 }
 

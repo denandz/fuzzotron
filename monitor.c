@@ -50,6 +50,7 @@ int monitor(char * file, char * regex){
     }
 
 end:
+	fclose(fh);
     return 0;
 }
 

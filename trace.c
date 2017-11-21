@@ -12,14 +12,14 @@
 
 #include "hash.h"
 #include "trace.h"
+#include "util.h"
 
 
 uint8_t * setup_shm(int shm_id){
     uint8_t * trace_bits;
     trace_bits = shmat(shm_id, NULL, 0);
-    if (!trace_bits){
-        printf("[!] shmat() failed: %s\n", strerror(errno));
-        return NULL;
+    if (trace_bits == (uint8_t *)-1){
+        fatal("[!] shmat() failed: %s\n", strerror(errno));
     }
 
     return trace_bits;

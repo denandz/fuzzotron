@@ -47,11 +47,12 @@ static unsigned long paths = 0;
 
 int main(int argc, char** argv) {
 
+    memset(&fuzz, 0x00, sizeof(fuzz));
     // parse arguments
     int c, threads = 1;
     static int use_blab = 0, use_radamsa = 0;
     char * grammar = NULL, * logfile = NULL, * regex = NULL, * testcase_dir = NULL;
-    fuzz.protocol = 0; fuzz.is_tls = 0;
+    fuzz.protocol = 0; fuzz.is_tls = 0; fuzz.destroy = 0;
 
     static struct option arg_options[] = {
         {"blab", no_argument, &use_blab, 1},
@@ -61,6 +62,7 @@ int main(int argc, char** argv) {
         {"output",  required_argument, 0, 'o'},
         {"directory",  required_argument, 0, 'd'},
         {"protocol",  required_argument, 0, 'p'},
+        {"destroy", no_argument, &fuzz.destroy, 1},
         {"checkscript", required_argument, 0, 'z'},
         {"trace", required_argument, 0, 's'},
         {0, 0, 0, 0}
@@ -68,7 +70,7 @@ int main(int argc, char** argv) {
     int arg_index;
     while((c = getopt_long(argc, argv, "d:c:h:p:g:t:m:c:P:r:w:s:z:o:", arg_options, &arg_index)) != -1){
         switch(c){
-            case 'c':    signal(SIGPIPE, SIG_IGN);
+            case 'c':
                 // Define PID to check for crash
                 check_pid = atoi(optarg);
                 printf("[+] Monitoring PID %d\n", check_pid);
@@ -319,9 +321,8 @@ void * worker(void * worker_args){
         // A server crash in calibration is not handled gracefully, this needs to be tidied up
         while(entry){
             memset(fuzz.trace_bits, 0x00, MAP_SIZE);
-            if(fuzz.send(fuzz.host, fuzz.port, entry->data, entry->len, fuzz.is_tls) < 0){
-                puts("[!] Failure in calibration\n");
-                goto cleanup;
+            if(fuzz.send(fuzz.host, fuzz.port, entry->data, entry->len) < 0){
+                fatal("[!] Failure in calibration\n");
             }
 
             exec_hash = wait_for_bitmap(fuzz.trace_bits);
@@ -346,7 +347,6 @@ void * worker(void * worker_args){
         // generate the test cases
         if(fuzz.gen == BLAB){
             cases = generator_blab(CASE_COUNT, fuzz.gen_arg, fuzz.directory, prefix);
-            entry = cases;
         }
 
         else if(fuzz.gen == RADAMSA){
@@ -387,8 +387,7 @@ void * worker(void * worker_args){
             }
 
             cases = generator_radamsa(CASE_COUNT, fuzz.gen_arg, fuzz.directory, prefix);
-            entry = cases;
-        }
+		}
 
         if(send_cases(cases)<0){
             goto cleanup;
@@ -437,10 +436,10 @@ int determ_fuzz(char * data, unsigned long len, unsigned int id){
 // Send all cases in a struct. return -1 if any failure, otherwise 0. Frees the supplied cases struct
 // and updates global counters.
 int send_cases(void * cases){
-    int ret;
+    int ret = 0;
     struct testcase * entry = cases;
-    uint32_t r;
     uint32_t exec_hash;
+    uint32_t r;
 
     while(entry){
         if(entry->len == 0){
@@ -451,7 +450,7 @@ int send_cases(void * cases){
         }
         if(fuzz.shm_id){
             memset(fuzz.trace_bits, 0x00, MAP_SIZE);
-            ret = fuzz.send(fuzz.host, fuzz.port, entry->data, entry->len, fuzz.is_tls);
+            ret = fuzz.send(fuzz.host, fuzz.port, entry->data, entry->len);
             //stop = send_tcp(fuzz.host, fuzz.port, entry->data, entry->len);
             if(ret < 0)
                 break;
@@ -462,6 +461,7 @@ int send_cases(void * cases){
                     r = calibrate_case(entry->data, entry->len, fuzz.trace_bits);
                     if(r == -1){
                         // crash during calibration?
+                        ret = r;
                         break;
                     }
                     else if(r == 0 || r == 2){
@@ -478,7 +478,7 @@ int send_cases(void * cases){
         }
         else {
             // no instrumentation
-            ret = fuzz.send(fuzz.host, fuzz.port, entry->data, entry->len, fuzz.is_tls);
+            ret = fuzz.send(fuzz.host, fuzz.port, entry->data, entry->len);
 
             if(ret < 0)
                 break;
@@ -554,7 +554,7 @@ int calibrate_case(char * testcase, unsigned long len, uint8_t * trace_bits){
     uint32_t hash, tmp_hash, i;
 
     memset(trace_bits, 0x00, MAP_SIZE);
-    if(fuzz.send(fuzz.host, fuzz.port, testcase, len, 0x00) < 0){
+    if(fuzz.send(fuzz.host, fuzz.port, testcase, len) < 0){
         return -1;
     }
 
@@ -566,7 +566,7 @@ int calibrate_case(char * testcase, unsigned long len, uint8_t * trace_bits){
 
     for(i = 0; i < 4; i++){
         memset(trace_bits, 0x00, MAP_SIZE);
-        if(fuzz.send(fuzz.host, fuzz.port, testcase, len, 0x00) < 0){
+        if(fuzz.send(fuzz.host, fuzz.port, testcase, len) < 0){
             return -1;
         }
         tmp_hash = wait_for_bitmap(trace_bits);
@@ -678,6 +678,7 @@ void help(){
     printf("\t-p\t\tPort to connect to REQUIRED\n");
     printf("\t-P\t\tProtocol to use (tcp,udp) REQUIRED\n");
     printf("\t--ssl\t\tUse SSL for the connection\n");
+    printf("\t--destroy\t\tUse TCP_REPAIR mode to immediately destroy the connection, do not send FIN/RST.");
     printf("Monitoring Options:\n");
     printf("\t-c\t\tPID to check - Fuzzotron will halt if this PID dissapears\n");
     printf("\t-m\t\tLogfile to monitor\n");

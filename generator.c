@@ -124,10 +124,8 @@ struct testcase * load_testcases(char * path, char * prefix){
 
     DIR * dir;
     struct dirent *ents;
-    dir = opendir(path);
-    if(dir < 0){
-        printf("[!] Error: Could not open directory: %s\n", strerror(errno));
-        return NULL;
+    if((dir = opendir(path)) == NULL){
+        fatal("[!] Error: Could not open directory: %s\n", strerror(errno));
     }
 
     while ((ents = readdir(dir)) != NULL){
@@ -140,16 +138,13 @@ struct testcase * load_testcases(char * path, char * prefix){
 
         snprintf(file_path, PATH_MAX, "%s/%s", path, ents->d_name);
         if((fp = fopen(file_path, "r"))== NULL){
-            printf("[!] Error: Could not open file %s: %s\n", file_path, strerror(errno));
-            return 0;
+            fatal("[!] Error: Could not open file %s: %s\n", file_path, strerror(errno));
         }
 
         if (fseek(fp, 0L, SEEK_END) == 0) {
             long bufsize = ftell(fp);
             if (bufsize == -1){
-                printf("[!] Error with ftell: %s", strerror(errno));
-                fclose(fp);
-                continue;
+                fatal("[!] Error with ftell: %s", strerror(errno));
             }
             else if(bufsize == 0){ // handle empty file
                 fclose(fp);
@@ -165,16 +160,14 @@ struct testcase * load_testcases(char * path, char * prefix){
 
             // Go back to the start of the file.
             if (fseek(fp, 0L, SEEK_SET) != 0){
-                printf("[!] Error: could not fseek: %s\n", strerror(errno));
-                return 0;
+                fatal("[!] Error: could not fseek: %s\n", strerror(errno));
             }
 
             // Read the entire file into memory.
             ft_malloc(entry->len, entry->data);
             fread(entry->data, sizeof(char), entry->len, fp);
             if ( ferror( fp ) != 0 ){
-                printf("[!] Error: fread: %s\n", strerror(errno));
-                return 0;
+                fatal("[!] Error: fread: %s\n", strerror(errno));
             }
         }
         fclose(fp);
