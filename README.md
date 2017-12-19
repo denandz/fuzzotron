@@ -34,6 +34,9 @@ An example to fuzz something like, I dunno, a DHCP server running on a router, w
 ./fuzzotron --radamsa --directory ~/testcase-archive/network-services/dhcp-client -h 192.168.1.1 -p 67 -P UDP -z ./is-dhcp-up.py
 ```
 
+### TCP_REPAIR mode
+Specifying the --destroy flag will put the TCP connections into TCP\_REPAIR mode before closing, meaning no FIN packets will get sent. TCP\_REPAIR requires the CAP\_NET\_ADMIN capability. If --destroy ends up stalling, you may have identified a slowloris style DOS condition where the target is blocking waiting for more data.
+
 ## Connection Setup
 Sometimes some things need to happen with a connection prior to your fuzz testcase being sent. EG, if you need to send a 'hello' packet, and receive a response prior to sending your payload. setup_tcp() in sender.c exist for this purpose.
 
@@ -46,7 +49,7 @@ Fuzzotron generates test cases in batches of 100 and stores them in /dev/shm/fuz
 Radamsa appears to be a bit overzealous with its mutations. A deterministic step has been introduced when using --radamsa mode, which will perform a walking bit mutation prior to moving to radamsa for fuzzing.
 
 ## AFL style tracing
-Fuzzotron can use the coverage data provided by a target compiled with afl-gcc et-al. You need to create the SysV shared memory segment that the application will use and then pass this to both the target application and fuzzotron. As network services can be rather non-deterministic, each case on a new path is fired multiple times and only saved if it behaves deterministically, otherwise it's jettisoned. Currently tracing is only supported if you're running a single fuzzotron thread and using radamsa for testcase generation. This is all pretty sketchy and I wouldn't rely on it...
+Fuzzotron can use the coverage data provided by a target compiled with afl-gcc et-al. You need to create the SysV shared memory segment that the application will use and then pass this to both the target application and fuzzotron. As network services can be rather non-deterministic, each case on a new path is fired multiple times and only saved if it behaves deterministically, otherwise it's jettisoned. Currently tracing is only supported if you're running a single fuzzotron thread. This is all pretty sketchy and I wouldn't rely on it...
 
 After your program is compiled, you would need to do the following. I suggest using afl-clang-fast (llvm mode...) as it plays nicer with multi-threaded targets.
 
@@ -63,6 +66,9 @@ As new solid paths are found, these will be saved in the test-case directory pro
 
 ### Attention Deficit Fuzzing
 If a new path is found, then deterministic operations are performed against this path immediately. This is mainly due to fuzzotron having no concept of an input-test-case-queue at this point.
+
+### Testcase Discovery Mode
+Using blab plus AFL style tracing is supported. Fuzzotron will save any generated testcases that trip a new path into the directory specified by --directory. This can be useful for generating a set of starting testcases to seed a mutational fuzzer (eg, radamsa mode).
 
 ## Random Musings
 Something something smart fuzzing seems simple but can get hard fast, instrumentation is important, testcases and mutations and so forth. Fuzzing daemons can be a right pain in the arse, but in general it seems that having your cores spinning away with a dumb fuzzer like fuzzotron while you're coding your AI based protocol specific monstrosity can net some interesting crashes. Setup is intended to be relatively fast and easy, so why not right?

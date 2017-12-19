@@ -17,8 +17,9 @@ extern int stop; // set to 1 to stop fuzzing
 
 struct fuzzer_args {
     int gen; // generator for the test cases. Blab, radamsa, custom etcetera.
-    char * gen_arg; // argument for the testcase generator, eg, grammar or testcase directory (for blab and radamsa respectively)
-    char * directory; // directory to store test cases
+    char * in_dir;
+    char * grammar;
+    char * tmp_dir; // temporary directory to store test cases
     char * host;
     char * check_script; // script to check server status. Must return 1 on server-up or anything else on server-down (crashed)
     int protocol; // 1 == TCP, 2 == UDP

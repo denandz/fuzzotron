@@ -19,7 +19,7 @@
     do { \
         fprintf(stderr, RED "[!] ERROR: " RESET); \
         fprintf(stderr, x); \
-        fprintf(stderr, "\n         Location : %s(), %s:%u\n\n", \
+        fprintf(stderr, "\n         Location : %s(), %s:%d\n\n", \
         __FUNCTION__, __FILE__, __LINE__); \
         exit(0);\
     } while(0)

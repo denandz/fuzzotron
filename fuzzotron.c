@@ -51,7 +51,7 @@ int main(int argc, char** argv) {
     // parse arguments
     int c, threads = 1;
     static int use_blab = 0, use_radamsa = 0;
-    char * grammar = NULL, * logfile = NULL, * regex = NULL, * testcase_dir = NULL;
+    char * logfile = NULL, * regex = NULL;
     fuzz.protocol = 0; fuzz.is_tls = 0; fuzz.destroy = 0;
 
     static struct option arg_options[] = {
@@ -78,16 +78,15 @@ int main(int argc, char** argv) {
 
             case 'd':
                 // define test case directory for blab
-                testcase_dir = optarg;
-                if(directory_exists(testcase_dir) < 0){
-                    fatal("Could not open %s\n", testcase_dir);
+                fuzz.in_dir = optarg;
+                if(directory_exists(fuzz.in_dir) < 0){
+                    fatal("Could not open %s\n", fuzz.in_dir);
                 }
                 break;
 
             case 'g':
                 // define grammar
-                printf(".");
-                grammar = optarg;
+                fuzz.grammar = optarg;
                 break;
 
             case 'h':
@@ -152,26 +151,32 @@ int main(int argc, char** argv) {
     if((fuzz.host == NULL) || (fuzz.port == 0) ||
             (use_blab == 1 && use_radamsa == 1) ||
             (use_blab == 0 && use_radamsa == 0) ||
-            (use_blab == 1 && testcase_dir) ||
-            (use_radamsa == 1 && grammar != NULL) ||
+            (use_blab == 1 && fuzz.in_dir && !fuzz.shm_id) ||
+            (use_radamsa == 1 && fuzz.grammar != NULL) ||
             (fuzz.protocol == 0) || (output_dir == NULL)){
         help();
         return -1;
     }
 
     // if we're using blab, ensure we have a grammar defined
-    if(use_blab == 1 && grammar == NULL){
+    if(use_blab == 1 && fuzz.grammar == NULL){
         fatal("If using blab, -g or --grammar must be specified\n");
     }
     // if we're using radamsa, ensure the directory with the example cases is defined
-    if(use_radamsa == 1 && testcase_dir == NULL){
+    if(use_radamsa == 1 && fuzz.in_dir == NULL){
         fatal("If using radamsa, -d or --directory must be specified\n");
     }
 
-    if((fuzz.shm_id && threads > 1) || (fuzz.shm_id && use_blab == 1)){
+    if(fuzz.shm_id && threads > 1){
+        fatal("Tracing only supported single threaded");
+    }
+    if(fuzz.shm_id && fuzz.gen == BLAB && fuzz.in_dir == NULL){
+        fatal("Blab and tracing requires --directory");
+    }
+    if(fuzz.shm_id && use_blab == 1 && fuzz.in_dir){
         // Note: hmmm, maybe using blab and instrumentation is a good idea... Save testcases that blab generates
         // that hit new paths and use this to seed a mutation-based fuzzer?
-        fatal("Tracing not supported with multithreading or blab\n");
+        puts(GRN "[+] Experimental discovery mode enabled\n" RESET);
     }
 
     // Fuzzotron and SSL is not thread safe
@@ -211,10 +216,10 @@ int main(int argc, char** argv) {
         printf("[+] Using check script: %s\n", fuzz.check_script);
     }
 
-    fuzz.directory = CASE_DIR;
-    if(directory_exists(fuzz.directory) < 0){
-        if(mkdir(fuzz.directory, 0755)<0){
-            fatal("[!] Could not mkdir %s: %s\n", fuzz.directory, strerror(errno));
+    fuzz.tmp_dir = CASE_DIR;
+    if(directory_exists(fuzz.tmp_dir) < 0){
+        if(mkdir(fuzz.tmp_dir, 0755)<0){
+            fatal("[!] Could not mkdir %s: %s\n", fuzz.tmp_dir, strerror(errno));
         }
     }
 
@@ -225,11 +230,9 @@ int main(int argc, char** argv) {
     }
 
     if(use_blab == 1){
-        fuzz.gen_arg = grammar;
         fuzz.gen = BLAB;
     }
     else if(use_radamsa){
-        fuzz.gen_arg = testcase_dir;
         fuzz.gen = RADAMSA;
     }
 
@@ -239,7 +242,7 @@ int main(int argc, char** argv) {
 
     signal(SIGPIPE, SIG_IGN);
     pthread_t workers[threads];
-    int i, rc;
+    int i;
     struct worker_args targs[threads];
     for(i = 1; i <= threads; i++){
 
@@ -247,9 +250,9 @@ int main(int argc, char** argv) {
         targs[i-1].threads = threads;
 
         printf("[+] Spawning worker thread %d\n", i);
-        rc = pthread_create(&workers[i-1], NULL, worker, &targs[i-1]);
-        if(rc > 0)
+        if(pthread_create(&workers[i-1], NULL, worker, &targs[i-1]) > 0)
             fatal("Creating pthread failed: %s\n", strerror(errno));
+
         usleep(2000);
     }
 
@@ -306,13 +309,15 @@ void * worker(void * worker_args){
     uint32_t exec_hash;
     int r;
 
-    memset(fuzz.virgin_bits, 255, MAP_SIZE);
     if(fuzz.shm_id > 0){
-        cases = load_testcases(fuzz.gen_arg, ""); // load all cases from the provided dir
-        entry = cases;
-
         printf("[.] Trace enabled\n");
+        memset(fuzz.virgin_bits, 255, MAP_SIZE);
         fuzz.trace_bits = setup_shm(fuzz.shm_id);
+    }
+
+    if(fuzz.shm_id > 0 && fuzz.gen == RADAMSA){
+        cases = load_testcases(fuzz.in_dir, ""); // load all cases from the provided dir
+        entry = cases;
 
         if(fuzz.trace_bits == 0){
             return NULL;
@@ -346,7 +351,7 @@ void * worker(void * worker_args){
     while(1){
         // generate the test cases
         if(fuzz.gen == BLAB){
-            cases = generator_blab(CASE_COUNT, fuzz.gen_arg, fuzz.directory, prefix);
+            cases = generator_blab(CASE_COUNT, fuzz.grammar, fuzz.tmp_dir, prefix);
         }
 
         else if(fuzz.gen == RADAMSA){
@@ -355,7 +360,7 @@ void * worker(void * worker_args){
             if(deterministic == 1 && thread_info->thread_id == 1){
                 //printf("Performing deterministic mutations\n");
 
-                struct testcase * orig_cases = load_testcases(fuzz.gen_arg, ""); // load all cases from the provided dir
+                struct testcase * orig_cases = load_testcases(fuzz.in_dir, ""); // load all cases from the provided dir
                 struct testcase * orig_entry = orig_cases;
 
                 while(orig_entry){
@@ -367,7 +372,6 @@ void * worker(void * worker_args){
 
                     if(stop < 0){
                         break;
-                        deterministic = 0;
                     }
                 }
                 free_testcases(orig_cases);
@@ -386,10 +390,10 @@ void * worker(void * worker_args){
                 continue;
             }
 
-            cases = generator_radamsa(CASE_COUNT, fuzz.gen_arg, fuzz.directory, prefix);
+            cases = generator_radamsa(CASE_COUNT, fuzz.in_dir, fuzz.tmp_dir, prefix);
 		}
 
-        if(send_cases(cases)<0){
+        if(send_cases(cases) < 0){
             goto cleanup;
         }
     } 
@@ -402,7 +406,7 @@ cleanup:
 // Perform determisistic mutations, id and max paramters for splitting work load across threads
 int determ_fuzz(char * data, unsigned long len, unsigned int id){
     unsigned long max = len << 3;
-    unsigned long offset = 0, i = 0;
+    unsigned long offset = 0;
 
     struct testcase * cases;
 
@@ -413,6 +417,8 @@ int determ_fuzz(char * data, unsigned long len, unsigned int id){
         }
     }
     else{
+        unsigned long i = 0;
+
         while(i < (max/100)){
             cases = generate_swbitflip(data, len, offset, 100);
             if(send_cases(cases) < 0){
@@ -469,9 +475,11 @@ int send_cases(void * cases){
                     }
                     else{
                         paths++; // new case! save and perform some deterministic fuzzing
-                        save_case(entry->data, entry->len, exec_hash, fuzz.gen_arg);
+                        save_case(entry->data, entry->len, exec_hash, fuzz.in_dir);
 
-                        determ_fuzz(entry->data, entry->len, 1); // attention defecit fuzzing
+                        if(fuzz.gen != BLAB){
+                            determ_fuzz(entry->data, entry->len, 1); // attention defecit fuzzing
+                        }
                     }
                 }
             }

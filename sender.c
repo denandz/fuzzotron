@@ -100,7 +100,6 @@ int send_udp(char * host, int port, char * packet, unsigned long packet_len){
 */
 int send_tcp(char * host, int port, char * packet, unsigned long packet_len){
     int sock = 0;
-    ssize_t r;
     struct sockaddr_in serv_addr;
 
 	if((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0){
@@ -164,8 +163,7 @@ int send_tcp(char * host, int port, char * packet, unsigned long packet_len){
         return 0;
     }
     else{
-        r = write(sock, packet, packet_len);
-        if(r < 0){
+        if(write(sock, packet, packet_len) < 0){
                 printf("[!] Error: write() error: %s errno: %d\n", strerror(errno), errno);
         }
     }
@@ -193,5 +191,6 @@ void destroy_socket(int sock){
         printf("[!] destroy_socket: TCP_REPAIR enable failed: %s\n", strerror(errno));
     }
 
+    usleep(100); // there is some weirdness with TCP_REPAIR, need to wait before closing.
     close(sock);
 }
