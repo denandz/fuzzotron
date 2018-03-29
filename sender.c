@@ -23,22 +23,12 @@
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 
+#include "callback.h"
 #include "fuzzotron.h"
 #include "sender.h"
 #include "util.h"
 
 extern int errno;
-
-void setup_tcp(int sock){
-    /*
-        your custom connection setup code goes here!
-        tip: xxd -i can be used to spit out C arrays
-
-    char packet[] = {0x40, 0x52};
-
-    write(sock, packet, sizeof(packet));
-    //read(sock, 0x00, 1);*/
-}
 
 /*
  * send a char array down a
@@ -56,6 +46,8 @@ int send_udp(char * host, int port, char * packet, unsigned long packet_len){
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(port);
     inet_pton(AF_INET, host, &serv_addr.sin_addr);
+
+    callback_pre_send(sock, packet, packet_len); // user defined callback
 
     // payload is larger than maximum datagram, send as multiple datagrams
     if(packet_len > 65507){
@@ -90,6 +82,7 @@ int send_udp(char * host, int port, char * packet, unsigned long packet_len){
         }
     }
 
+    callback_post_send(sock); // user defined callback
     close(sock);
     return 0;
 }
@@ -122,8 +115,10 @@ int send_tcp(char * host, int port, char * packet, unsigned long packet_len){
 		    return -1;
         }
 	}
+
+    fcntl(sock, F_SETFL, O_RDONLY|O_NONBLOCK);
 	
-    setup_tcp(sock); // perform any preliminary setup
+    callback_pre_send(sock, packet, packet_len); // user defined callback
     
     if(fuzz.is_tls){
         // Set up the things for TLS
@@ -158,6 +153,7 @@ int send_tcp(char * host, int port, char * packet, unsigned long packet_len){
         }
 
         SSL_free(ssl);
+        callback_post_send(sock); // user defined callback
         close(sock);
         SSL_CTX_free(ctx);
         return 0;
@@ -167,6 +163,8 @@ int send_tcp(char * host, int port, char * packet, unsigned long packet_len){
                 printf("[!] Error: write() error: %s errno: %d\n", strerror(errno), errno);
         }
     }
+
+    callback_post_send(sock); // user defined callback
 
     if(fuzz.destroy){
         destroy_socket(sock);

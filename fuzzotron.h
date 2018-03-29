@@ -1,9 +1,9 @@
 /*
  * File:   fuzzotron.h
  * Author: DoI
-
  */
 
+#include <stdint.h>
 #include "trace.h"
 
 // Tunables

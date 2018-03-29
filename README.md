@@ -23,7 +23,11 @@ When a crash occurs, the test case queues for each thread will be stored in \<ou
 for i in $(ls output/*); do echo "firing $i"; ncat <target> <port> < $i; done
 ```
 
-Given the nature of daemon fuzzing, running a rolling tcpdump is good insurance. Worse comes to worst, you can carve the test cases out of the PCAP and replay them manually.
+Given the nature of daemon fuzzing, running a rolling tcpdump is good insurance. Worse comes to worst, you can carve the test cases out of the PCAP and replay them manually. For example, a tcpdump command that will capture packets into a 10MB file, and capture a maximum of 10 files, would be executed as such (adding your own filter so you only catch fuzzing relevant packets is a good idea):
+
+```
+tcpdump -i ens33 -C 10M -W 10 -w out.pcap
+```
 
 ### UDP fuzzing
 UDP fuzzing requires some method of determining if the target is down, as the connection should never fail (yay UDP). If you're fuzzing a daemon running on localhost (recommended), then use the '-c' option and specify a PID. If the daemon is remote, fuzzotron supports the use of an auxiliary check script (--check or -z). The script needs to output '1' as its first character on success, any anything else on failure.
@@ -37,8 +41,8 @@ An example to fuzz something like, I dunno, a DHCP server running on a router, w
 ### TCP_REPAIR mode
 Specifying the --destroy flag will put the TCP connections into TCP\_REPAIR mode before closing, meaning no FIN packets will get sent. TCP\_REPAIR requires the CAP\_NET\_ADMIN capability. If --destroy ends up stalling, you may have identified a slowloris style DOS condition where the target is blocking waiting for more data.
 
-## Connection Setup
-Sometimes some things need to happen with a connection prior to your fuzz testcase being sent. EG, if you need to send a 'hello' packet, and receive a response prior to sending your payload. setup_tcp() in sender.c exist for this purpose.
+## Connection Setup and Teardown
+Sometimes some things need to happen with a connection prior to your fuzz testcase being sent. EG, if you need to send a 'hello' packet, and receive a response prior to sending your payload. Sometimes things also need to happen after the testcase is sent, like sending the 'actually-do-the-work-now-FFS' packet. callback.c defines two methods that you can modify to achieve this. The callback\_pre\_send() method also allows you to tamper the testcase before its sent, so one can implement things like packet checksumming. 
 
 ## Generators
 Currently, radamsa and blab are supported for testcase generation. Radamsa takes a directory that has valid test cases and performs mutations on the provided test cases. Blab takes a grammar file which is used to programmatically generate the cases. Detailed documentation is available on their respective github pages - (https://github.com/aoh/radamsa) and (https://github.com/aoh/blab)
@@ -93,3 +97,4 @@ sysctl -w net.ipv4.tcp_syn_retries=1
 
 ## Acknowledgements
 * lcamtuf - Chunks of code and a number of core concepts from lcamtuf's AFL were used in this code base.
+* VT - Testing, contributing, being the OG renegade master.

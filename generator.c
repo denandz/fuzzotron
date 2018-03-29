@@ -165,7 +165,10 @@ struct testcase * load_testcases(char * path, char * prefix){
 
             // Read the entire file into memory.
             ft_malloc(entry->len, entry->data);
-            fread(entry->data, sizeof(char), entry->len, fp);
+            if(fread(entry->data, sizeof(char), entry->len, fp) != entry->len){
+                fatal("[!] Error: fread");
+            }
+            
             if ( ferror( fp ) != 0 ){
                 fatal("[!] Error: fread: %s\n", strerror(errno));
             }

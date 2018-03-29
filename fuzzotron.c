@@ -442,11 +442,10 @@ int determ_fuzz(char * data, unsigned long len, unsigned int id){
 // Send all cases in a struct. return -1 if any failure, otherwise 0. Frees the supplied cases struct
 // and updates global counters.
 int send_cases(void * cases){
-    int ret = 0;
+    int ret = 0, r = 0;
     struct testcase * entry = cases;
     uint32_t exec_hash;
-    uint32_t r;
-
+    
     while(entry){
         if(entry->len == 0){
             // no data in test case, go to next one. Radamsa will generate null
@@ -470,7 +469,7 @@ int send_cases(void * cases){
                         ret = r;
                         break;
                     }
-                    else if(r == 0 || r == 2){
+                    else if(r == 0){
                         cases_jettisoned++;
                     }
                     else{
@@ -567,11 +566,9 @@ int calibrate_case(char * testcase, unsigned long len, uint8_t * trace_bits){
     }
 
     hash = wait_for_bitmap(trace_bits); // check null
-    if(hash == 0) // unstable test case, bitmap still changing after 2 seconds
+    if(hash == 0 || hash == NULL_HASH) // unstable test case, bitmap still changing after 2 seconds, or no bitmap change
         return 0;
-    if(hash == -1) // no bitmap change??
-        return 2;
-
+    
     for(i = 0; i < 4; i++){
         memset(trace_bits, 0x00, MAP_SIZE);
         if(fuzz.send(fuzz.host, fuzz.port, testcase, len) < 0){
@@ -607,8 +604,7 @@ int pid_exists(int pid){
 int run_check(char * script){
 
     if(access(script, X_OK) < 0){
-        printf("[!] Error accessing check script %s: %s\n", script, strerror(errno));
-        return -1;
+        fatal("[!] Error accessing check script %s: %s\n", script, strerror(errno));
     }
 
     int out_pipe[2];
@@ -618,8 +614,7 @@ int run_check(char * script){
     memset(ret, 0x00, 2);
 
     if(pipe(out_pipe) < 0 || pipe(err_pipe) < 0){
-        printf("[!] Error with pipe: %s\n", strerror(errno));
-        return -1;
+        fatal("[!] Error with pipe: %s\n", strerror(errno));
     }
     if((pid = fork()) == 0){
             dup2(err_pipe[1], 2);
@@ -636,14 +631,17 @@ int run_check(char * script){
     }
 
     else if(pid < 0){
-            fprintf(stderr, "[!] FORK FAILED!\n");
-            return -1;
+            fatal("[!] FORK FAILED!\n");
     }
     else{
         close(err_pipe[1]);
         close(out_pipe[1]);
         waitpid(pid, NULL, 0);
-        read(out_pipe[0], ret, 1);
+        if(read(out_pipe[0], ret, 1) < 0){
+            fatal("read() failed");   
+        };
+        close(err_pipe[0]);
+        close(out_pipe[0]);
         return atoi(&ret[0]);
     }
 

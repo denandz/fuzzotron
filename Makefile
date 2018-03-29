@@ -1,7 +1,7 @@
 BLAB := $(shell command -v blab 2> /dev/null)
 RADAMSA := $(shell command -v radamsa 2> /dev/null)
 
-CFLAGS = -Wall -g
+CFLAGS = -W -g -O3
 
 all:
 ifndef RADAMSA
@@ -12,4 +12,4 @@ ifndef BLAB
 	$(info Blab is not available, attempting to use blab mode will fail.)
 endif
 
-	$(CC) $(CFLAGS) fuzzotron.c generator.c monitor.c sender.c trace.c -o fuzzotron -lpcre -lcrypto -lssl -lpthread
+	$(CC) $(CFLAGS) callback.c fuzzotron.c generator.c monitor.c sender.c trace.c -o fuzzotron -lpcre -lcrypto -lssl -lpthread
