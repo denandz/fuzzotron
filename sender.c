@@ -116,15 +116,13 @@ int send_tcp(char * host, int port, char * packet, unsigned long packet_len){
         }
 	}
 
-    fcntl(sock, F_SETFL, O_RDONLY|O_NONBLOCK);
-	
-    callback_pre_send(sock, packet, packet_len); // user defined callback
-    
     if(fuzz.is_tls){
         // Set up the things for TLS
         int ret;
         SSL *ssl;
         SSL_CTX * ctx;
+        size_t alpn_len;
+        char * alpn;
 
         SSL_library_init();
         OpenSSL_add_all_algorithms();
@@ -137,34 +135,51 @@ int send_tcp(char * host, int port, char * packet, unsigned long packet_len){
             return -1;
         }
 
+        if(fuzz.alpn){
+            alpn = next_protos_parse(&alpn_len, fuzz.alpn);
+            if(!alpn){
+                fatal("[!] Error in alpn next_protos_parse");
+            }
+
+            if(SSL_CTX_set_alpn_protos(ctx, alpn, alpn_len) != 0){
+                free(alpn);
+                fatal("[!] Error setting ALPN protos: %s\n", ERR_error_string(ERR_get_error(), NULL));
+            }
+
+            free(alpn);
+        }
+
         ssl = SSL_new(ctx);
         SSL_set_fd(ssl,sock);
         ret = SSL_connect(ssl);
         if (ret < 1){
             printf("[!] Error initiating TLS session. Error no: %d\n", SSL_get_error(ssl, ret));
-			SSL_free(ssl);
-			close(sock);
-			SSL_CTX_free(ctx);
+            SSL_free(ssl);
+            close(sock);
+            SSL_CTX_free(ctx);
             return -1;
         }
 
+        callback_ssl_pre_send(ssl, packet, packet_len); // user defined callback
         if(SSL_write(ssl, packet, packet_len)<0){
             printf("[!] Error: SSL_write() error no: %d\n", SSL_get_error(ssl, ret));
         }
+        callback_ssl_post_send(ssl); // user defined callback
 
         SSL_free(ssl);
-        callback_post_send(sock); // user defined callback
         close(sock);
         SSL_CTX_free(ctx);
         return 0;
     }
     else{
+        callback_pre_send(sock, packet, packet_len); // user defined callback
+        fcntl(sock, F_SETFL, O_RDONLY|O_NONBLOCK);
         if(write(sock, packet, packet_len) < 0){
                 printf("[!] Error: write() error: %s errno: %d\n", strerror(errno), errno);
         }
+        callback_post_send(sock); // user defined callback
     }
 
-    callback_post_send(sock); // user defined callback
 
     if(fuzz.destroy){
         destroy_socket(sock);
@@ -191,4 +206,39 @@ void destroy_socket(int sock){
 
     usleep(100); // there is some weirdness with TCP_REPAIR, need to wait before closing.
     close(sock);
+}
+
+/*-
+ * next_protos_parse parses a comma separated list of strings into a string
+ * in a format suitable for passing to SSL_CTX_set_next_protos_advertised.
+ *   outlen: (output) set to the length of the resulting buffer on success.
+ *   err: NULL on failure
+ *   in: a NULL terminated string like "abc,def,ghi"
+ *
+ *   returns: a malloc'd buffer or NULL on failure.
+ */
+char * next_protos_parse(size_t * outlen, const char * in){
+    size_t len;
+    char * out;
+    size_t i, start = 0;
+
+    len = strlen(in);
+    if (len >= 65535)
+        return NULL;
+
+    ft_malloc(strlen(in) + 1, out);
+    for (i = 0; i <= len; ++i) {
+        if (i == len || in[i] == ',') {
+            if (i - start > 255) {
+                free(out);
+                return NULL;
+            }
+            out[start] = i - start;
+            start = i + 1;
+        } else
+            out[i + 1] = in[i];
+    }
+
+    *outlen = len + 1;
+    return out;
 }

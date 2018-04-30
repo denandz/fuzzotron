@@ -55,6 +55,7 @@ int main(int argc, char** argv) {
     fuzz.protocol = 0; fuzz.is_tls = 0; fuzz.destroy = 0;
 
     static struct option arg_options[] = {
+        {"alpn", required_argument, 0, 'l'},
         {"blab", no_argument, &use_blab, 1},
         {"radamsa", no_argument, &use_radamsa, 1},
         {"ssl", no_argument, &fuzz.is_tls, 1},
@@ -92,6 +93,11 @@ int main(int argc, char** argv) {
             case 'h':
                 // define host
                 fuzz.host = optarg;
+                break;
+
+            case 'l':
+                // set ALPN string
+                fuzz.alpn = optarg;
                 break;
 
             case 'm':

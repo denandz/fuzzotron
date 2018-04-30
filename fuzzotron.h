@@ -26,6 +26,7 @@ struct fuzzer_args {
     int destroy; // Use TCP_REPAIR to destroy the connection, do not send a RST after the testcase
     int port;
     int is_tls;
+    char * alpn;
 
     int32_t shm_id; // Shared memory address for AFL style tracing
     uint8_t * trace_bits;
