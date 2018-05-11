@@ -118,16 +118,20 @@ int main(int argc, char** argv) {
 
             case 'P':
                 // define protocol
-                if((strcmp(optarg,"udp") != 0) && (strcmp(optarg,"tcp") != 0)){
-                        fatal("Please specify either 'tcp' or 'udp' for -P\n");
+                if((strcmp(optarg,"udp") != 0) && (strcmp(optarg,"tcp") != 0) && (strcmp(optarg,"unix") != 0)){
+                        fatal("Please specify either 'tcp', 'udp' or 'unix' for -P\n");
                 }
                 if(strcmp(optarg,"tcp") == 0){
                             fuzz.protocol = 1;
                             fuzz.send = send_tcp;
                 }
-                if(strcmp(optarg,"udp") == 0){
+                else if(strcmp(optarg,"udp") == 0){
                             fuzz.protocol = 2;
                             fuzz.send = send_udp;
+                }
+                else if(strcmp(optarg,"unix") == 0){
+                    fuzz.protocol = 3;
+                    fuzz.send = send_unix;
                 }
 
                 break;
@@ -154,7 +158,7 @@ int main(int argc, char** argv) {
     }
 
     // check argument sanity
-    if((fuzz.host == NULL) || (fuzz.port == 0) ||
+    if((fuzz.host == NULL) || (fuzz.port == 0 && fuzz.protocol != 3) ||
             (use_blab == 1 && use_radamsa == 1) ||
             (use_blab == 0 && use_radamsa == 0) ||
             (use_blab == 1 && fuzz.in_dir && !fuzz.shm_id) ||

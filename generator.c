@@ -182,6 +182,7 @@ struct testcase * load_testcases(char * path, char * prefix){
 
     if(i == 0){ // no cases found
         memset(testcase, 0x00, sizeof(struct testcase));
+        fatal("no testcases loaded");
     }
 
     return testcase; // place holder

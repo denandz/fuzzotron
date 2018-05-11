@@ -10,10 +10,12 @@
 #include <stdint.h>
 #include <string.h>
 #include <sys/socket.h>
+#include <sys/un.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <arpa/inet.h>
 #include <netinet/tcp.h>
+#include <linux/limits.h>
 #include <unistd.h>
 #include <errno.h>
 #include <netdb.h>
@@ -122,7 +124,7 @@ int send_tcp(char * host, int port, char * packet, unsigned long packet_len){
         SSL *ssl;
         SSL_CTX * ctx;
         size_t alpn_len;
-        char * alpn;
+        unsigned char * alpn;
 
         SSL_library_init();
         OpenSSL_add_all_algorithms();
@@ -217,9 +219,9 @@ void destroy_socket(int sock){
  *
  *   returns: a malloc'd buffer or NULL on failure.
  */
-char * next_protos_parse(size_t * outlen, const char * in){
+unsigned char * next_protos_parse(size_t * outlen, const char * in){
     size_t len;
-    char * out;
+    unsigned char * out;
     size_t i, start = 0;
 
     len = strlen(in);
@@ -241,4 +243,32 @@ char * next_protos_parse(size_t * outlen, const char * in){
 
     *outlen = len + 1;
     return out;
+}
+
+int send_unix(char * path, int port /* not used for UNIX sockets */, char * packet, unsigned long packet_len){
+    int sock = 0;
+    struct sockaddr_un serv_addr;
+    memset(&serv_addr, 0x00, sizeof(serv_addr));
+
+    serv_addr.sun_family = AF_LOCAL;
+	strncpy(serv_addr.sun_path, path, 108);
+
+    if((sock = socket(PF_LOCAL, SOCK_STREAM, 0)) < 0){
+		fatal("[!] Error: Could not create socket: %s\n", strerror(errno));
+	}
+
+    if(connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0){
+        printf("[!] Error: Could not connect to socket: %s\n", strerror(errno));
+        return -1;
+    }
+
+    callback_pre_send(sock, packet, packet_len); // user defined callback
+    if(write(sock, packet, packet_len)<0){
+        printf("[!] Error: write() error: %s errno: %d\n", strerror(errno), errno);
+    }
+    callback_post_send(sock); // user defined callback
+
+    close(sock);
+
+    return 0;
 }

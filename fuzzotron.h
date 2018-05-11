@@ -22,7 +22,7 @@ struct fuzzer_args {
     char * tmp_dir; // temporary directory to store test cases
     char * host;
     char * check_script; // script to check server status. Must return 1 on server-up or anything else on server-down (crashed)
-    int protocol; // 1 == TCP, 2 == UDP
+    int protocol; // 1 == TCP, 2 == UDP, 3 == UNIX
     int destroy; // Use TCP_REPAIR to destroy the connection, do not send a RST after the testcase
     int port;
     int is_tls;
