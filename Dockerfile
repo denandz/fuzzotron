@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y \
 	--no-install-recommends
 
 WORKDIR /src
-RUN git clone https://github.com/aoh/radamsa.git \
+RUN git clone https://gitlab.com/akihe/radamsa \
 	&& git clone https://github.com/aoh/blab \
 	&& git clone https://github.com/denandz/fuzzotron
 WORKDIR /src/radamsa
