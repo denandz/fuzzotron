@@ -18,9 +18,9 @@ Basic fuzzotron usage would look like:
 
 The above will use radamsa to generate test cases based on the files in the 'testcases' directory, and fire these test cases at 8080/tcp on localhost. In the event that PID 15634 goes away, fuzzing will stop and the last 100 test cases kept in the output directory. This would be used for something like nginx, running with a single worker and the workers PID being specified. Without a PID specified, Fuzzotron will keep running until a connection failure occurs, indicating the port is down. Fuzzotron currently does not automatically respawn the target after a crash is detected. The '-o' flag specifies the directory to spool the current test cases out to in the event of a crash.
 
-When a crash occurs, the test case queues for each thread will be stored in \<output dir\>/\<thread pid\>-\<testcaseno\>. An easy way to replay this is:
+When a crash occurs, the test case queues for each thread will be stored in \<output dir\>/\<thread pid\>-\<testcaseno\>. The replay utility can be used to send individual test cases. Replay uses the same sender code as fuzzotron, so anything you've put into callback.c will also be triggered by replay.
 ```
-for i in $(ls output/*); do echo "firing $i"; ncat <target> <port> < $i; done
+for i in $(find output/ -type f); do replay -h <target> -p <port> -P <tcp/udp> $i; done
 ```
 
 Given the nature of daemon fuzzing, running a rolling tcpdump is good insurance. Worse comes to worst, you can carve the test cases out of the PCAP and replay them manually. For example, a tcpdump command that will capture packets into a 10MB file, and capture a maximum of 10 files, would be executed as such (adding your own filter so you only catch fuzzing relevant packets is a good idea):
@@ -95,6 +95,6 @@ sysctl -w net.ipv4.tcp_syn_retries=1
 * Fuzzotron is stalling! - check the above linux tunables, make sure they're set
 * No paths using --trace mode - confirm that your target is compiled with afl-gcc, and that the SHM number is correct
 
-## Acknowledgements
+## Acknowledgments
 * lcamtuf - Chunks of code and a number of core concepts from lcamtuf's AFL were used in this code base.
 * VT - Testing, contributing, being the OG renegade master.
