@@ -12,7 +12,7 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /src
 RUN git clone https://gitlab.com/akihe/radamsa \
-	&& git clone https://github.com/aoh/blab \
+	&& git clone https://gitlab.com/akihe/blab \
 	&& git clone https://github.com/denandz/fuzzotron
 WORKDIR /src/radamsa
 RUN make \
