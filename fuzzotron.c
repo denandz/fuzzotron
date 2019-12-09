@@ -293,7 +293,7 @@ int main(int argc, char** argv) {
     pthread_mutex_destroy(&runlock);
     printf("[.] Done. Total testcases issued: %lu\n", cases_sent);
 
-	return 1;   
+    return 1;
 }
 
 void * call_monitor(){
@@ -401,7 +401,7 @@ void * worker(void * worker_args){
             }
 
             cases = generator_radamsa(CASE_COUNT, fuzz.in_dir, fuzz.tmp_dir, prefix);
-		}
+        }
 
         if(send_cases(cases) < 0){
             goto cleanup;

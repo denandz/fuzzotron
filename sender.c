@@ -90,33 +90,33 @@ int send_udp(char * host, int port, char * packet, unsigned long packet_len){
 }
 
 /*
- *	send a char array down a
- *	tcp socket.
+ *    send a char array down a
+ *    tcp socket.
 */
 int send_tcp(char * host, int port, char * packet, unsigned long packet_len){
     int sock = 0;
     struct sockaddr_in serv_addr;
 
-	if((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0){
-		fatal("[!] Error: Could not create socket: %s\n", strerror(errno));
-	}
+    if((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0){
+        fatal("[!] Error: Could not create socket: %s\n", strerror(errno));
+    }
 
-	serv_addr.sin_family = AF_INET;
-	serv_addr.sin_port = htons(port);
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(port);
     inet_pton(AF_INET, host, &serv_addr.sin_addr);
 
     int c = connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
-	if(c < 0){
-		printf("[!] Error: Could not connect: %s errno: %d\n", strerror(errno), errno);
+    if(c < 0){
+        printf("[!] Error: Could not connect: %s errno: %d\n", strerror(errno), errno);
         if(errno == ECONNRESET){
             close(sock);
             return 0; // just skip this testcase
         }
         else{
             close(sock);
-		    return -1;
+            return -1;
         }
-	}
+    }
 
     if(fuzz.is_tls){
         // Set up the things for TLS
@@ -251,11 +251,11 @@ int send_unix(char * path, int port /* not used for UNIX sockets */, char * pack
     memset(&serv_addr, 0x00, sizeof(serv_addr));
 
     serv_addr.sun_family = AF_LOCAL;
-	strncpy(serv_addr.sun_path, path, 108);
+    strncpy(serv_addr.sun_path, path, 108);
 
     if((sock = socket(PF_LOCAL, SOCK_STREAM, 0)) < 0){
-		fatal("[!] Error: Could not create socket: %s\n", strerror(errno));
-	}
+        fatal("[!] Error: Could not create socket: %s\n", strerror(errno));
+    }
 
     if(connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0){
         printf("[!] Error: Could not connect to socket: %s\n", strerror(errno));
