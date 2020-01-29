@@ -34,10 +34,12 @@
 // Struct to hold arguments passed to the monitor thread
 struct monitor_args mon_args;
 
-int stop = 0;   // the global 'stop fuzzing' variable. When set to 1, all threads will spool
-                // their cases to disk and exit.
+volatile int stop = 0;   // the global 'stop fuzzing' variable. When set to 1, all threads will spool
+                         // their cases to disk and exit.
+int timeout_stop = 0; // similar to stop, but needed to know if the test cases should be saved.
 pthread_mutex_t runlock;
 int check_pid = 0; // server pid to check for crash.
+int timeout_secs = 0; // time in seconds until fuzzing stops.
 struct fuzzer_args fuzz; // Arguments for the fuzzer threads
 char * output_dir = NULL; // directory for potential crashes
 
@@ -93,6 +95,11 @@ int main(int argc, char** argv) {
             case 'h':
                 // define host
                 fuzz.host = optarg;
+                break;
+
+            case 'k':
+                // set time for fuzzing to run (in seconds)
+                timeout_secs = atoi(optarg);
                 break;
 
             case 'l':
@@ -266,6 +273,15 @@ int main(int argc, char** argv) {
         usleep(2000);
     }
 
+    pthread_t timeout_monitor;
+    if(timeout_secs){
+        printf("[+] Spawning timeout monitor\n");
+        if(pthread_create(&timeout_monitor, NULL, timer_job, NULL) > 0)
+            fatal("Creating pthread failed: %s\n", strerror(errno));
+        printf("[.] Timeout monitor alive and will stop testing in %d seconds\n", timeout_secs);
+    }
+
+
     char spinner[4] = "|/-\\";
     struct spint { unsigned i:2; } s;
     s.i=0;
@@ -286,6 +302,9 @@ int main(int argc, char** argv) {
         s.i++;
     }
 
+    if(timeout_secs){
+        pthread_join(timeout_monitor, NULL);
+    }
     for(i = 1; i <= threads; i++){
         pthread_join(workers[i-1], NULL);
     }
@@ -298,6 +317,25 @@ int main(int argc, char** argv) {
 
 void * call_monitor(){
     monitor(mon_args.file, mon_args.regex);
+    return NULL;
+}
+
+// timeout monitor's flow - checks if the elapsed time has passed the defined timeout, and if so triggers a stop
+void * timer_job(void * args){
+    time_t start_time;
+
+    time(&start_time);
+    while(stop == 0 && difftime(time(NULL), start_time) < timeout_secs){
+        sleep(1);
+    }
+
+    if(stop == 0){
+        pthread_mutex_lock(&runlock);
+        printf("[!] Reached timeout\n");
+        stop = 1;
+        timeout_stop = 1;
+        pthread_mutex_unlock(&runlock);
+    }
     return NULL;
 }
 
@@ -523,7 +561,9 @@ int check_stop(void * cases, int result){
     pthread_mutex_lock(&runlock);
     if(stop == 1){
         // save cases
-        save_testcases(cases, output_dir);
+        if(!timeout_stop){
+            save_testcases(cases, output_dir);
+        }
         pthread_mutex_unlock(&runlock);
         return -1;
     }
@@ -691,6 +731,7 @@ void help(){
     printf("\t--directory\t\tDirectory with original test cases\n\n");
     printf("Connection Options:\n");
     printf("\t-h\t\tIP of host to connect to REQUIRED\n");
+    printf("\t-k\t\tNumber of seconds before fuzzing stops\n");
     printf("\t-p\t\tPort to connect to REQUIRED\n");
     printf("\t-P\t\tProtocol to use (tcp,udp) REQUIRED\n");
     printf("\t--ssl\t\tUse SSL for the connection\n");
@@ -699,6 +740,7 @@ void help(){
     printf("\t-c\t\tPID to check - Fuzzotron will halt if this PID dissapears\n");
     printf("\t-m\t\tLogfile to monitor\n");
     printf("\t-r\t\tRegex to use with above logfile\n");
+    printf("\t-t\t\tNumber of worker threads\n");
     printf("\t-z\t\tCheck script to execute. Should return 1 on server being okay and anything else otherwise.\n");
     printf("\t--trace\t\tUse AFL style tracing. Single threaded only, see README.md\n");
     exit(0);
