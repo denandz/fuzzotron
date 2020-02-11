@@ -71,7 +71,7 @@ int main(int argc, char** argv) {
         {0, 0, 0, 0}
     };
     int arg_index;
-    while((c = getopt_long(argc, argv, "d:c:h:p:g:t:m:c:P:r:w:s:z:o:", arg_options, &arg_index)) != -1){
+    while((c = getopt_long(argc, argv, "d:c:h:p:g:t:m:c:P:r:w:s:z:o:k:", arg_options, &arg_index)) != -1){
         switch(c){
             case 'c':
                 // Define PID to check for crash
