@@ -13,7 +13,7 @@
 #define RADAMSA 0x01
 #define BLAB 0x02
 
-extern int stop; // set to 1 to stop fuzzing
+extern volatile int stop; // set to 1 to stop fuzzing
 
 struct fuzzer_args {
     int gen; // generator for the test cases. Blab, radamsa, custom etcetera.
@@ -50,6 +50,7 @@ struct worker_args {
 
 int main(int argc, char** argv);
 void * call_monitor();
+void * timer_job();
 void * worker();
 int pid_exists(int pid);
 int storeTestCases(char * prefix, char * crashId);
