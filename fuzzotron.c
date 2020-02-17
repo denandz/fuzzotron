@@ -444,7 +444,7 @@ void * worker(void * worker_args){
         if(send_cases(cases) < 0){
             goto cleanup;
         }
-    } 
+    }
 
 cleanup:
     printf("[!] Thread %d exiting\n", thread_info->thread_id);
@@ -493,7 +493,7 @@ int send_cases(void * cases){
     int ret = 0, r = 0;
     struct testcase * entry = cases;
     uint32_t exec_hash;
-    
+
     while(entry){
         if(entry->len == 0){
             // no data in test case, go to next one. Radamsa will generate null
@@ -618,7 +618,7 @@ int calibrate_case(char * testcase, unsigned long len, uint8_t * trace_bits){
     hash = wait_for_bitmap(trace_bits); // check null
     if(hash == 0 || hash == NULL_HASH) // unstable test case, bitmap still changing after 2 seconds, or no bitmap change
         return 0;
-    
+
     for(i = 0; i < 4; i++){
         memset(trace_bits, 0x00, MAP_SIZE);
         if(fuzz.send(fuzz.host, fuzz.port, testcase, len) < 0){
@@ -688,7 +688,7 @@ int run_check(char * script){
         close(out_pipe[1]);
         waitpid(pid, NULL, 0);
         if(read(out_pipe[0], ret, 1) < 0){
-            fatal("read() failed");   
+            fatal("read() failed");
         };
         close(err_pipe[0]);
         close(out_pipe[0]);
@@ -727,15 +727,15 @@ void help(){
     printf("Generation Options:\n");
     printf("\t--blab\t\tUse Blab for testcase generation\n");
     printf("\t-g\t\tBlab grammar to use\n");
-    printf("\t--radamsa\t\tUse Radamsa for testcase generation\n");
-    printf("\t--directory\t\tDirectory with original test cases\n\n");
+    printf("\t--radamsa\tUse Radamsa for testcase generation\n");
+    printf("\t--directory\tDirectory with original test cases\n\n");
     printf("Connection Options:\n");
     printf("\t-h\t\tIP of host to connect to REQUIRED\n");
     printf("\t-k\t\tNumber of seconds before fuzzing stops\n");
     printf("\t-p\t\tPort to connect to REQUIRED\n");
     printf("\t-P\t\tProtocol to use (tcp,udp) REQUIRED\n");
     printf("\t--ssl\t\tUse SSL for the connection\n");
-    printf("\t--destroy\t\tUse TCP_REPAIR mode to immediately destroy the connection, do not send FIN/RST.");
+    printf("\t--destroy\tUse TCP_REPAIR mode to immediately destroy the connection, do not send FIN/RST.");
     printf("Monitoring Options:\n");
     printf("\t-c\t\tPID to check - Fuzzotron will halt if this PID dissapears\n");
     printf("\t-m\t\tLogfile to monitor\n");
