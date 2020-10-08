@@ -2,7 +2,7 @@
 Fuzzotron is a simple network fuzzer supporting TCP, UDP and multithreading. Radamsa and Blab are used for test case generation. Fuzzotron exists as a first-port-of-call network fuzzer, aiming for low setup overhead.
 
 ## Install
-You need to install some dependencies and at the very least Radamsa (https://github.com/aoh/radamsa). Compiling targets with Address Sanitizer is also useful (https://clang.llvm.org/docs/AddressSanitizer.html)
+You need to install some dependencies and at the very least Radamsa (https://gitlab.com/akihe/radamsa). Compiling targets with Address Sanitizer is also useful (https://clang.llvm.org/docs/AddressSanitizer.html)
 
 ```
 apt install libssl-dev libpcre3-dev
