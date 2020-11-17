@@ -129,8 +129,9 @@ struct testcase * load_testcases(char * path, char * prefix){
     }
 
     while ((ents = readdir(dir)) != NULL){
-        // The below assumes a filesystem that supports returning types in dirent structs.
-        if(strncmp(ents->d_name, prefix, strlen(prefix)) != 0 || ents->d_type != DT_REG)
+        struct stat s;
+
+        if(strncmp(ents->d_name, prefix, strlen(prefix)) != 0)
             continue;
 
         FILE * fp;
@@ -139,6 +140,16 @@ struct testcase * load_testcases(char * path, char * prefix){
         snprintf(file_path, PATH_MAX, "%s/%s", path, ents->d_name);
         if((fp = fopen(file_path, "r"))== NULL){
             fatal("[!] Error: Could not open file %s: %s\n", file_path, strerror(errno));
+        }
+
+        if(fstat(fileno(fp), &s) == -1){
+            fatal("[!] Error: fstat: %s\n", strerror(errno));
+        }
+
+        if(! S_ISREG(s.st_mode)) {
+            // not a regular file, skip!
+            fclose(fp);
+            continue;
         }
 
         if (fseek(fp, 0L, SEEK_END) == 0) {
