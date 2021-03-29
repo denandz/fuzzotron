@@ -63,7 +63,7 @@ Shared memory id: 118718481
 $ __AFL_SHM_ID=118718481 ./targetd
 
 # in a separate session
-$ ./fuzzotron --radamsa --directory <test-case-dir> -h 127.0.0.1 -p <port> -P tcp --trace 118718481
+$ ./fuzzotron --radamsa --directory <test-case-dir> -o <output dir> -h 127.0.0.1 -p <port> -P tcp --trace 118718481
 ```
 
 As new solid paths are found, these will be saved in the test-case directory provided.
