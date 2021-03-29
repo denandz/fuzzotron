@@ -10,8 +10,10 @@
 
 #include <openssl/ssl.h>
 
+#include "generator.h"
+
 // Called after the socket is connected but before the test case is sent.
-void callback_pre_send(int sock, void * testcase, unsigned long len){
+void callback_pre_send(int sock, testcase_t * testcase){
     /*
     your custom connection setup code goes here!
     tip: xxd -i can be used to spit out C arrays
@@ -19,6 +21,9 @@ void callback_pre_send(int sock, void * testcase, unsigned long len){
     char packet[] = {0x40, 0x52};
 
     write(sock, packet, sizeof(packet));
+
+    or modify the testcase about to be sent somehow
+    memset(testcase->data, 0x00, 1); // set first byte to null
     */
 }
 
@@ -27,7 +32,7 @@ void callback_post_send(int sock){
 
 }
 
-void callback_ssl_pre_send(SSL * ssl, void * testcase, unsigned long len){
+void callback_ssl_pre_send(SSL * ssl, testcase_t * testcase){
 
 }
 

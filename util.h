@@ -3,6 +3,9 @@
  * Author: DoI
  */
 
+#ifndef UTIL_H
+#define UTIL_H
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -30,3 +33,5 @@
             fatal("[!] Malloc failed\n"); \
         }\
     } while(0)
+
+#endif

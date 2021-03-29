@@ -3,14 +3,17 @@
  * Author: DoI
  */
 
- #include <stdint.h>
+#ifndef GENERATOR_H
+#define GENERATOR_H
 
- // Flip a bit, re-used from AFL
- #define FLIP_BIT(_ar, _b) do { \
-     uint8_t* _arf = (uint8_t*)(_ar); \
-     uint32_t _bf = (_b); \
-     _arf[(_bf) >> 3] ^= (128 >> ((_bf) & 7)); \
-   } while (0)
+#include <stdint.h>
+
+// Flip a bit, re-used from AFL
+#define FLIP_BIT(_ar, _b) do { \
+    uint8_t* _arf = (uint8_t*)(_ar); \
+    uint32_t _bf = (_b); \
+    _arf[(_bf) >> 3] ^= (128 >> ((_bf) & 7)); \
+} while (0)
 
 // linked list
 typedef struct {
@@ -27,3 +30,5 @@ int save_testcases(testcase_t * cases, char * path);
 void save_case(char * data, unsigned long len, uint32_t hash, char * directory);
 int save_case_p(char * data, unsigned long len, char * prefix, char * directory);
 void free_testcases(testcase_t * cases);
+
+#endif

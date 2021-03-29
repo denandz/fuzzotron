@@ -27,6 +27,7 @@
 
 #include "callback.h"
 #include "fuzzotron.h"
+#include "generator.h"
 #include "sender.h"
 #include "util.h"
 
@@ -36,7 +37,7 @@ extern int errno;
  * send a char array down a
  * udp socket
 */
-int send_udp(char * host, int port, char * packet, unsigned long packet_len){
+int send_udp(char * host, int port, testcase_t * testcase){
     int sock = 0;
     ssize_t r;
     struct sockaddr_in serv_addr;
@@ -49,12 +50,12 @@ int send_udp(char * host, int port, char * packet, unsigned long packet_len){
     serv_addr.sin_port = htons(port);
     inet_pton(AF_INET, host, &serv_addr.sin_addr);
 
-    callback_pre_send(sock, packet, packet_len); // user defined callback
+    callback_pre_send(sock, testcase); // user defined callback
 
     // payload is larger than maximum datagram, send as multiple datagrams
-    if(packet_len > 65507){
-        const void * position = packet;
-        unsigned long rem = packet_len;
+    if(testcase->len > 65507){
+        const void * position = testcase->data;
+        unsigned long rem = testcase->len;
 
         while(rem > 0){
             if(rem > 65507){
@@ -75,7 +76,7 @@ int send_udp(char * host, int port, char * packet, unsigned long packet_len){
         }
     }
     else{
-        r = sendto(sock,packet,packet_len,0,(struct sockaddr *)&serv_addr,sizeof(serv_addr));
+        r = sendto(sock,testcase->data,testcase->len,0,(struct sockaddr *)&serv_addr,sizeof(serv_addr));
 
         if(r < 0){
             printf("[!] Error: in sendto(): %s\n", strerror(errno));
@@ -93,7 +94,7 @@ int send_udp(char * host, int port, char * packet, unsigned long packet_len){
  *    send a char array down a
  *    tcp socket.
 */
-int send_tcp(char * host, int port, char * packet, unsigned long packet_len){
+int send_tcp(char * host, int port, testcase_t * testcase){
     int sock = 0;
     struct sockaddr_in serv_addr;
 
@@ -162,8 +163,8 @@ int send_tcp(char * host, int port, char * packet, unsigned long packet_len){
             return -1;
         }
 
-        callback_ssl_pre_send(ssl, packet, packet_len); // user defined callback
-        if(SSL_write(ssl, packet, packet_len)<0){
+        callback_ssl_pre_send(ssl, testcase); // user defined callback
+        if(SSL_write(ssl, testcase->data, testcase->len)<0){
             printf("[!] Error: SSL_write() error no: %d\n", SSL_get_error(ssl, ret));
         }
         callback_ssl_post_send(ssl); // user defined callback
@@ -174,9 +175,9 @@ int send_tcp(char * host, int port, char * packet, unsigned long packet_len){
         return 0;
     }
     else{
-        callback_pre_send(sock, packet, packet_len); // user defined callback
+        callback_pre_send(sock, testcase); // user defined callback
         fcntl(sock, F_SETFL, O_RDONLY|O_NONBLOCK);
-        if(write(sock, packet, packet_len) < 0){
+        if(write(sock, testcase->data, testcase->len) < 0){
                 printf("[!] Error: write() error: %s errno: %d\n", strerror(errno), errno);
         }
         callback_post_send(sock); // user defined callback
@@ -245,7 +246,7 @@ unsigned char * next_protos_parse(size_t * outlen, const char * in){
     return out;
 }
 
-int send_unix(char * path, int port /* not used for UNIX sockets */, char * packet, unsigned long packet_len){
+int send_unix(char * path, int port /* not used for UNIX sockets */, testcase_t * testcase){
     int sock = 0;
     struct sockaddr_un serv_addr;
     memset(&serv_addr, 0x00, sizeof(serv_addr));
@@ -262,8 +263,8 @@ int send_unix(char * path, int port /* not used for UNIX sockets */, char * pack
         return -1;
     }
 
-    callback_pre_send(sock, packet, packet_len); // user defined callback
-    if(write(sock, packet, packet_len)<0){
+    callback_pre_send(sock, testcase); // user defined callback
+    if(write(sock, testcase->data, testcase->len)<0){
         printf("[!] Error: write() error: %s errno: %d\n", strerror(errno), errno);
     }
     callback_post_send(sock); // user defined callback

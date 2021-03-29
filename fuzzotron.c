@@ -374,14 +374,14 @@ void * worker(void * worker_args){
         // A server crash in calibration is not handled gracefully, this needs to be tidied up
         while(entry){
             memset(fuzz.trace_bits, 0x00, MAP_SIZE);
-            if(fuzz.send(fuzz.host, fuzz.port, entry->data, entry->len) < 0){
+            if(fuzz.send(fuzz.host, fuzz.port, entry) < 0){
                 fatal("[!] Failure in calibration\n");
             }
 
             exec_hash = wait_for_bitmap(fuzz.trace_bits);
             if(exec_hash > 0){
                 if(has_new_bits(fuzz.virgin_bits, fuzz.trace_bits) > 1){
-                    r = calibrate_case(entry->data, entry->len, fuzz.trace_bits);
+                    r = calibrate_case(entry, fuzz.trace_bits);
                     if(r == 0)
                         cases_jettisoned++;
                     else{
@@ -503,15 +503,14 @@ int send_cases(void * cases){
         }
         if(fuzz.shm_id){
             memset(fuzz.trace_bits, 0x00, MAP_SIZE);
-            ret = fuzz.send(fuzz.host, fuzz.port, entry->data, entry->len);
-            //stop = send_tcp(fuzz.host, fuzz.port, entry->data, entry->len);
+            ret = fuzz.send(fuzz.host, fuzz.port, entry);
             if(ret < 0)
                 break;
 
             exec_hash = wait_for_bitmap(fuzz.trace_bits);
             if(exec_hash > 0){
                 if(has_new_bits(fuzz.virgin_bits, fuzz.trace_bits) > 1){
-                    r = calibrate_case(entry->data, entry->len, fuzz.trace_bits);
+                    r = calibrate_case(entry, fuzz.trace_bits);
                     if(r == -1){
                         // crash during calibration?
                         ret = r;
@@ -533,7 +532,7 @@ int send_cases(void * cases){
         }
         else {
             // no instrumentation
-            ret = fuzz.send(fuzz.host, fuzz.port, entry->data, entry->len);
+            ret = fuzz.send(fuzz.host, fuzz.port, entry);
 
             if(ret < 0)
                 break;
@@ -607,11 +606,11 @@ int check_stop(void * cases, int result){
  * tiny, useless test cases. Return -1 on failure. Timeout on waiting for the bitmap to stop changing
  * is an immediate 0.
  */
-int calibrate_case(char * testcase, unsigned long len, uint8_t * trace_bits){
+int calibrate_case(testcase_t * testcase, uint8_t * trace_bits){
     uint32_t hash, tmp_hash, i;
 
     memset(trace_bits, 0x00, MAP_SIZE);
-    if(fuzz.send(fuzz.host, fuzz.port, testcase, len) < 0){
+    if(fuzz.send(fuzz.host, fuzz.port, testcase) < 0){
         return -1;
     }
 
@@ -621,7 +620,7 @@ int calibrate_case(char * testcase, unsigned long len, uint8_t * trace_bits){
 
     for(i = 0; i < 4; i++){
         memset(trace_bits, 0x00, MAP_SIZE);
-        if(fuzz.send(fuzz.host, fuzz.port, testcase, len) < 0){
+        if(fuzz.send(fuzz.host, fuzz.port, testcase) < 0){
             return -1;
         }
         tmp_hash = wait_for_bitmap(trace_bits);

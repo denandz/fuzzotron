@@ -115,10 +115,11 @@ int main(int argc, char ** argv){
         }
     }
     fclose(fp);
-    
+
     if(data_len > 0){
-        printf("Sending: %s bytes: %lu\n", file, data_len);
-        fuzz.send(fuzz.host, fuzz.port, data, data_len);
+        testcase_t testcase = {data_len, data, 0x00};
+        printf("Sending: %s bytes: %lu\n", file, testcase.len);
+        fuzz.send(fuzz.host, fuzz.port, &testcase);
         free(data);
     }
 

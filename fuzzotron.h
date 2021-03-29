@@ -3,8 +3,12 @@
  * Author: DoI
  */
 
+#ifndef FUZZOTRON_H
+#define FUZZOTRON_H
+
 #include <stdint.h>
 #include "trace.h"
+#include "generator.h"
 
 // Tunables
 #define CASE_COUNT "100"
@@ -32,7 +36,7 @@ struct fuzzer_args {
     uint8_t * trace_bits;
     uint8_t virgin_bits[MAP_SIZE];
 
-    int (*send)(char * host, int port, char * data, unsigned long len); // pointer to method to send a packet.
+    int (*send)(char * host, int port, testcase_t * testcase); // pointer to method to send a packet.
 };
 
 extern struct fuzzer_args fuzz;
@@ -59,7 +63,9 @@ void help();
 int run_check(char * script);
 int directory_exists(char * dir);
 int file_exists(char * file);
-int calibrate_case(char * testcase, unsigned long len, uint8_t * trace_bits);
+int calibrate_case(testcase_t * testcase, uint8_t * trace_bits);
 int determ_fuzz(char * data, unsigned long len, unsigned int id);
 int send_cases(void * cases);
 int check_stop(void * cases, int result);
+
+#endif
