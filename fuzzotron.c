@@ -351,8 +351,8 @@ void * worker(void * worker_args){
     sprintf(prefix,"%d",(int)syscall(SYS_gettid));
 
     // Testcases
-    struct testcase * cases = 0x00;
-    struct testcase * entry = 0x00;
+    testcase_t * cases = 0x00;
+    testcase_t * entry = 0x00;
 
     uint32_t exec_hash;
     int r;
@@ -408,8 +408,8 @@ void * worker(void * worker_args){
             if(deterministic == 1 && thread_info->thread_id == 1){
                 //printf("Performing deterministic mutations\n");
 
-                struct testcase * orig_cases = load_testcases(fuzz.in_dir, ""); // load all cases from the provided dir
-                struct testcase * orig_entry = orig_cases;
+                testcase_t * orig_cases = load_testcases(fuzz.in_dir, ""); // load all cases from the provided dir
+                testcase_t * orig_entry = orig_cases;
 
                 while(orig_entry){
                     if(determ_fuzz(orig_entry->data, orig_entry->len, thread_info->thread_id) < 0){
@@ -456,7 +456,7 @@ int determ_fuzz(char * data, unsigned long len, unsigned int id){
     unsigned long max = len << 3;
     unsigned long offset = 0;
 
-    struct testcase * cases;
+    testcase_t * cases;
 
     if(max < 100){
         cases = generate_swbitflip(data, len, offset, max);
@@ -491,7 +491,7 @@ int determ_fuzz(char * data, unsigned long len, unsigned int id){
 // and updates global counters.
 int send_cases(void * cases){
     int ret = 0, r = 0;
-    struct testcase * entry = cases;
+    testcase_t * entry = cases;
     uint32_t exec_hash;
 
     while(entry){

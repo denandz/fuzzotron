@@ -23,11 +23,11 @@
 // Executes radamsa and returns a linked list of test cases
 // this is pretty inefficient, and running a radamsa server and reading from the socket
 // would likely be a far, far smarter idea.
-struct testcase * generator_radamsa(char * count, char * testcase_dir, char * path, char * prefix){
+testcase_t * generator_radamsa(char * count, char * testcase_dir, char * path, char * prefix){
     pid_t pid;
     int s;
     char output[PATH_MAX];
-    struct testcase * testcase;
+    testcase_t * testcase;
 
     snprintf(output, PATH_MAX, "%s/%s-%%n", path, prefix);
     char * argv[] = { "radamsa", "-n", count, "-r", "-o", output, testcase_dir, 0 };
@@ -47,11 +47,11 @@ struct testcase * generator_radamsa(char * count, char * testcase_dir, char * pa
 }
 
 // Executes blab and returns a linked list of test cases
-struct testcase * generator_blab(char * count, char * grammar, char * path, char * prefix){
+testcase_t * generator_blab(char * count, char * grammar, char * path, char * prefix){
     pid_t pid;
     int s;
     char output[PATH_MAX];
-    struct testcase * testcase;
+    testcase_t * testcase;
 
     snprintf(output, PATH_MAX, "%s/%s-%%n", path, prefix);      
 
@@ -74,11 +74,11 @@ struct testcase * generator_blab(char * count, char * grammar, char * path, char
 }
 
 // single walking bit, returns a linked struct of testcases
-struct testcase * generate_swbitflip(char * data, unsigned long in_len, unsigned long offset, unsigned long count){
+testcase_t * generate_swbitflip(char * data, unsigned long in_len, unsigned long offset, unsigned long count){
     unsigned long i = 0;
     char * output, * input;
-    struct testcase * testcase, * entry;
-    ft_malloc(sizeof(struct testcase),testcase);
+    testcase_t * testcase, * entry;
+    ft_malloc(sizeof(testcase_t),testcase);
     entry = testcase;
 
     ft_malloc(in_len, input);
@@ -98,7 +98,7 @@ struct testcase * generate_swbitflip(char * data, unsigned long in_len, unsigned
         memcpy(output, input, in_len);
 
         if(i > 0){
-            ft_malloc(sizeof(struct testcase),entry->next);
+            ft_malloc(sizeof(testcase_t),entry->next);
             entry = entry->next;
         }
 
@@ -115,11 +115,11 @@ struct testcase * generate_swbitflip(char * data, unsigned long in_len, unsigned
 }
 
 // load all testcases from dir into a linked list
-struct testcase * load_testcases(char * path, char * prefix){
+testcase_t * load_testcases(char * path, char * prefix){
     int i = 0;
-    struct testcase * testcase, * entry;
+    testcase_t * testcase, * entry;
 
-    ft_malloc(sizeof(struct testcase), testcase);
+    ft_malloc(sizeof(testcase_t), testcase);
     entry = testcase;
 
     DIR * dir;
@@ -164,7 +164,7 @@ struct testcase * load_testcases(char * path, char * prefix){
 
             if(i>0){
                 // not the first entry
-                ft_malloc(sizeof(struct testcase), entry->next);
+                ft_malloc(sizeof(testcase_t), entry->next);
                 entry = entry->next;
             }
             entry->len = bufsize;
@@ -192,7 +192,7 @@ struct testcase * load_testcases(char * path, char * prefix){
     closedir(dir);
 
     if(i == 0){ // no cases found
-        memset(testcase, 0x00, sizeof(struct testcase));
+        memset(testcase, 0x00, sizeof(testcase_t));
         fatal("no testcases loaded");
     }
 
@@ -200,8 +200,8 @@ struct testcase * load_testcases(char * path, char * prefix){
 }
 
 // save testcase struct to disk. Returns the number of items saved or <0 on error
-int save_testcases(struct testcase * cases, char * path){
-    struct testcase * entry;
+int save_testcases(testcase_t * cases, char * path){
+    testcase_t * entry;
     entry = cases;
     int i = 1;
     char filename[PATH_MAX];
@@ -267,8 +267,8 @@ int save_case_p(char * data, unsigned long len, char * prefix, char * directory)
     return 0;
 }
 
-void free_testcases(struct testcase * cases){
-    struct testcase * entry;
+void free_testcases(testcase_t * cases){
+    testcase_t * entry;
     entry = cases;
 
     while(entry){

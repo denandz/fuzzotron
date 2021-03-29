@@ -13,17 +13,17 @@
    } while (0)
 
 // linked list
-struct testcase {
+typedef struct {
         unsigned long len;
         char * data;
-        struct testcase * next;
-};
+        void * next; // pointer to the next testcase in the list
+} testcase_t;
 
-struct testcase * generator_blab(char * count, char * grammar, char * path, char * prefix);
-struct testcase * generator_radamsa(char * count, char * testcase_dir, char * path, char * prefix);
-struct testcase * generate_swbitflip(char * input, unsigned long in_len, unsigned long offset, unsigned long count);
-struct testcase * load_testcases(char * path, char * prefix);
-int save_testcases(struct testcase * cases, char * path);
+testcase_t * generator_blab(char * count, char * grammar, char * path, char * prefix);
+testcase_t * generator_radamsa(char * count, char * testcase_dir, char * path, char * prefix);
+testcase_t * generate_swbitflip(char * input, unsigned long in_len, unsigned long offset, unsigned long count);
+testcase_t * load_testcases(char * path, char * prefix);
+int save_testcases(testcase_t * cases, char * path);
 void save_case(char * data, unsigned long len, uint32_t hash, char * directory);
 int save_case_p(char * data, unsigned long len, char * prefix, char * directory);
-void free_testcases(struct testcase * cases);
+void free_testcases(testcase_t * cases);
