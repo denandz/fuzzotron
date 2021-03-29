@@ -35,7 +35,7 @@ UDP fuzzing requires some method of determining if the target is down, as the co
 An example to fuzz something like, I dunno, a DHCP server running on a router, would be:
 
 ```
-./fuzzotron --radamsa --directory ~/testcase-archive/network-services/dhcp-client -h 192.168.1.1 -p 67 -P UDP -z ./is-dhcp-up.py
+./fuzzotron --radamsa --directory ~/testcase-archive/network-services/dhcp-client -h 192.168.1.1 -p 67 -P udp -z ./is-dhcp-up.py -o output
 ```
 
 ### TCP_REPAIR mode
