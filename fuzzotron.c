@@ -738,7 +738,7 @@ void help(){
     printf("\t-p\t\tPort to connect to REQUIRED\n");
     printf("\t-P\t\tProtocol to use (tcp,udp) REQUIRED\n");
     printf("\t--ssl\t\tUse SSL for the connection\n");
-    printf("\t--destroy\tUse TCP_REPAIR mode to immediately destroy the connection, do not send FIN/RST.");
+    printf("\t--destroy\tUse TCP_REPAIR mode to immediately destroy the connection, do not send FIN/RST.\n\n");
     printf("Monitoring Options:\n");
     printf("\t-c\t\tPID to check - Fuzzotron will halt if this PID dissapears\n");
     printf("\t-m\t\tLogfile to monitor\n");

@@ -31,7 +31,9 @@ Connection Options:
 	-p		Port to connect to REQUIRED
 	-P		Protocol to use (tcp,udp) REQUIRED
 	--ssl		Use SSL for the connection
-	--destroy	Use TCP_REPAIR mode to immediately destroy the connection, do not send FIN/RST.Monitoring Options:
+	--destroy	Use TCP_REPAIR mode to immediately destroy the connection, do not send FIN/RST.
+    
+Monitoring Options:
 	-c		PID to check - Fuzzotron will halt if this PID dissapears
 	-m		Logfile to monitor
 	-r		Regex to use with above logfile
