@@ -24,6 +24,9 @@
 #include <fcntl.h>
 #include <dirent.h>
 
+#include <openssl/ssl.h>
+#include <openssl/err.h>
+
 #include "monitor.h"
 #include "fuzzotron.h"
 #include "sender.h"
@@ -196,11 +199,12 @@ int main(int argc, char** argv) {
         puts(GRN "[+] Experimental discovery mode enabled\n" RESET);
     }
 
-    // Fuzzotron and SSL is not thread safe
-    if(threads > 1 && fuzz.is_tls){
-        fatal("Sorry, fuzzotron does not support multithreading and SSL yet\n");
+    if(fuzz.is_tls){
+        SSL_library_init();
+        OpenSSL_add_all_algorithms();
+        SSL_load_error_strings();
     }
-
+    
     if(logfile != NULL){
         if(regex == NULL){
             printf("[!] No regex specified, falling back to Crash-Detect mode\n");

@@ -12,6 +12,7 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <sys/types.h>
+#include <sys/time.h>
 #include <sys/wait.h>
 #include <arpa/inet.h>
 #include <netinet/tcp.h>
@@ -33,6 +34,8 @@
 
 extern int errno;
 
+#define RECV_TIMEOUT 1 // Timeout for SSL connections - default 1 second
+
 /*
  * send a char array down a
  * udp socket
@@ -50,43 +53,96 @@ int send_udp(char * host, int port, testcase_t * testcase){
     serv_addr.sin_port = htons(port);
     inet_pton(AF_INET, host, &serv_addr.sin_addr);
 
-    callback_pre_send(sock, testcase); // user defined callback
+    if(fuzz.is_tls){ // DTLS
+        SSL_CTX * ctx;
+        SSL * ssl;
+        BIO * bio;
+        int ret;
+        unsigned long err;
+        struct timeval timeout;
 
-    // payload is larger than maximum datagram, send as multiple datagrams
-    if(testcase->len > 65507){
-        const void * position = testcase->data;
-        unsigned long rem = testcase->len;
+        ctx = SSL_CTX_new(DTLS_client_method());
+        if(ctx == NULL){
+            printf("[!] Error spawning DTLS context\n");
+            ERR_print_errors_fp(stdout);
+            return -1;
+        }
 
-        while(rem > 0){
-            if(rem > 65507){
-                r = sendto(sock,position,65507,0,(struct sockaddr *)&serv_addr,sizeof(serv_addr));
+        ssl = SSL_new(ctx);
+        bio = BIO_new_dgram(sock, BIO_CLOSE);
+        timeout.tv_sec = RECV_TIMEOUT;
+        timeout.tv_usec = 0;
+        BIO_ctrl(bio, BIO_CTRL_DGRAM_SET_RECV_TIMEOUT, 0, &timeout);
+
+        if (connect(sock, (struct sockaddr *) &serv_addr, sizeof(struct sockaddr_in))) {
+                fatal("connect");
+        }
+        BIO_ctrl(bio, BIO_CTRL_DGRAM_SET_CONNECTED, 0, &serv_addr);
+        SSL_set_bio(ssl, bio, bio);
+
+        ret = SSL_connect(ssl);
+        if (ret < 1){
+            printf("[!] Error initiating DTLS session. Error no: %d\n", SSL_get_error(ssl, ret));
+            SSL_free(ssl);
+            close(sock);
+            SSL_CTX_free(ctx);
+            return -1;
+        }
+
+        callback_ssl_pre_send(ssl, testcase);
+       
+        ret = SSL_write(ssl, testcase->data, testcase->len);
+        if (ret < 0){
+            printf("[!] Error: SSL_write() error code no: %d\n", SSL_get_error(ssl, ret));
+        }
+
+        callback_ssl_post_send(ssl);
+
+        SSL_free(ssl);
+        close(sock);
+        SSL_CTX_free(ctx);
+        
+        return 0;
+    } 
+    else {
+        callback_pre_send(sock, testcase); // user defined callback
+
+        // payload is larger than maximum datagram, send as multiple datagrams
+        if(testcase->len > 65507){
+            const void * position = testcase->data;
+            unsigned long rem = testcase->len;
+
+            while(rem > 0){
+                if(rem > 65507){
+                    r = sendto(sock,position,65507,0,(struct sockaddr *)&serv_addr,sizeof(serv_addr));
+                }
+                else{
+                    r = sendto(sock,position,rem,0,(struct sockaddr *)&serv_addr,sizeof(serv_addr));
+                }
+
+                if(r < 0){
+                    printf("[!] Error: in chunked sendto(): %s\n", strerror(errno));
+                    close(sock);
+                    return -1;
+                }
+
+                rem -= r;
+                position += r;
             }
-            else{
-                r = sendto(sock,position,rem,0,(struct sockaddr *)&serv_addr,sizeof(serv_addr));
-            }
+        }
+        else{
+            r = sendto(sock,testcase->data,testcase->len,0,(struct sockaddr *)&serv_addr,sizeof(serv_addr));
 
             if(r < 0){
-                printf("[!] Error: in chunked sendto(): %s\n", strerror(errno));
+                printf("[!] Error: in sendto(): %s\n", strerror(errno));
                 close(sock);
                 return -1;
             }
-
-            rem -= r;
-            position += r;
         }
-    }
-    else{
-        r = sendto(sock,testcase->data,testcase->len,0,(struct sockaddr *)&serv_addr,sizeof(serv_addr));
 
-        if(r < 0){
-            printf("[!] Error: in sendto(): %s\n", strerror(errno));
-            close(sock);
-            return -1;
-        }
+        callback_post_send(sock); // user defined callback
+        close(sock);
     }
-
-    callback_post_send(sock); // user defined callback
-    close(sock);
     return 0;
 }
 
@@ -127,10 +183,6 @@ int send_tcp(char * host, int port, testcase_t * testcase){
         size_t alpn_len;
         unsigned char * alpn;
 
-        SSL_library_init();
-        OpenSSL_add_all_algorithms();
-        SSL_load_error_strings();
-
         ctx = SSL_CTX_new(SSLv23_client_method());
         if(ctx == NULL){
             printf("[!] Error spawning TLS context\n");
@@ -164,7 +216,8 @@ int send_tcp(char * host, int port, testcase_t * testcase){
         }
 
         callback_ssl_pre_send(ssl, testcase); // user defined callback
-        if(SSL_write(ssl, testcase->data, testcase->len)<0){
+        ret = SSL_write(ssl, testcase->data, testcase->len);
+        if (ret < 0){
             printf("[!] Error: SSL_write() error no: %d\n", SSL_get_error(ssl, ret));
         }
         callback_ssl_post_send(ssl); // user defined callback
@@ -178,7 +231,7 @@ int send_tcp(char * host, int port, testcase_t * testcase){
         callback_pre_send(sock, testcase); // user defined callback
         fcntl(sock, F_SETFL, O_RDONLY|O_NONBLOCK);
         if(write(sock, testcase->data, testcase->len) < 0){
-                printf("[!] Error: write() error: %s errno: %d\n", strerror(errno), errno);
+            printf("[!] Error: write() error: %s errno: %d\n", strerror(errno), errno);
         }
         callback_post_send(sock); // user defined callback
     }
