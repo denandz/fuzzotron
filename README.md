@@ -10,6 +10,36 @@ make
 ```
 
 ## Usage
+
+```
+FuzzoTron - A Fuzzing Harness built around OUSPG's Blab and Radamsa.
+
+Usage (crash-detect mode - blab): ./fuzzotron --blab -g http_request -h 127.0.0.1 -p 80 -P tcp -o output
+Usage (crash-detect mode - radamsa): ./fuzzotron --radamsa --directory testcases/ -h 127.0.0.1 -p 80 -P tcp -o output
+Usage (log-monitor mode): ./fuzzotron --blab -g http_request -h 127.0.0.1 -p 80 -P tcp -m /var/log/messages -r 'segfault' -o output
+Usage (process-monitor mode): ./fuzzotron --radamsa --directory testcases/ -h 127.0.0.1 -p 80 -P tcp -c 23123 -o output
+
+Generation Options:
+	--blab		Use Blab for testcase generation
+	-g		Blab grammar to use
+	--radamsa	Use Radamsa for testcase generation
+	--directory	Directory with original test cases
+
+Connection Options:
+	-h		IP of host to connect to REQUIRED
+	-k		Number of seconds before fuzzing stops
+	-p		Port to connect to REQUIRED
+	-P		Protocol to use (tcp,udp) REQUIRED
+	--ssl		Use SSL for the connection
+	--destroy	Use TCP_REPAIR mode to immediately destroy the connection, do not send FIN/RST.Monitoring Options:
+	-c		PID to check - Fuzzotron will halt if this PID dissapears
+	-m		Logfile to monitor
+	-r		Regex to use with above logfile
+	-t		Number of worker threads
+	-z		Check script to execute. Should return 1 on server being okay and anything else otherwise.
+	--trace		Use AFL style tracing. Single threaded only, see README.md
+```
+
 Basic fuzzotron usage would look like:
 
 ```
