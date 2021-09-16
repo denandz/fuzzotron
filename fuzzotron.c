@@ -461,6 +461,10 @@ int determ_fuzz(char * data, unsigned long len, unsigned int id){
     unsigned long offset = 0;
     unsigned long determ_batch_size = strtol(CASE_COUNT, NULL, 10);
 
+    if(determ_batch_size == 0){
+        fatal("[!] determ_batch_size strtol returned 0\n");
+    }
+
     testcase_t * cases;
 
     if(max < determ_batch_size){
