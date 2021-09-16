@@ -732,6 +732,10 @@ void help(){
     printf("Usage (crash-detect mode - radamsa): ./fuzzotron --radamsa --directory testcases/ -h 127.0.0.1 -p 80 -P tcp -o output\n");
     printf("Usage (log-monitor mode): ./fuzzotron --blab -g http_request -h 127.0.0.1 -p 80 -P tcp -m /var/log/messages -r 'segfault' -o output\n");
     printf("Usage (process-monitor mode): ./fuzzotron --radamsa --directory testcases/ -h 127.0.0.1 -p 80 -P tcp -c 23123 -o output\n\n");
+    printf("General Options:\n");
+    printf("\t-o\t\tOutput directory for crashes REQUIRED\n");
+    printf("\t-t\t\tNumber of worker threads\n");
+    printf("\t--trace\t\tUse AFL style tracing. Single threaded only, see README.md\n\n");
     printf("Generation Options:\n");
     printf("\t--blab\t\tUse Blab for testcase generation\n");
     printf("\t-g\t\tBlab grammar to use\n");
@@ -748,8 +752,6 @@ void help(){
     printf("\t-c\t\tPID to check - Fuzzotron will halt if this PID dissapears\n");
     printf("\t-m\t\tLogfile to monitor\n");
     printf("\t-r\t\tRegex to use with above logfile\n");
-    printf("\t-t\t\tNumber of worker threads\n");
     printf("\t-z\t\tCheck script to execute. Should return 1 on server being okay and anything else otherwise.\n");
-    printf("\t--trace\t\tUse AFL style tracing. Single threaded only, see README.md\n");
     exit(0);
 }
