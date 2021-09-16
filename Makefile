@@ -14,11 +14,11 @@ REPLAY_OBJ = $(REPLAY_SRC:.c=.o)
 .PHONY: all
 all: fuzzotron replay
 ifndef RADAMSA
-	$(error radamsa is not available. Download from https://github.com/aoh/radamsa)
+	$(error radamsa is not available. Download from https://gitlab.com/akihe/radamsa)
 endif
 
 ifndef BLAB
-	$(info Blab is not available, attempting to use blab mode will fail.)
+	$(info Blab is not available, attempting to use blab mode will fail. Download from https://gitlab.com/akihe/blab)
 endif
 
 $(FUZZOTRON): $(FUZZOTRON_OBJ)
