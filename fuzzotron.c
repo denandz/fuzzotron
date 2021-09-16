@@ -459,10 +459,11 @@ cleanup:
 int determ_fuzz(char * data, unsigned long len, unsigned int id){
     unsigned long max = len << 3;
     unsigned long offset = 0;
+    unsigned long determ_batch_size = strtol(CASE_COUNT, NULL, 10);
 
     testcase_t * cases;
 
-    if(max < 100){
+    if(max < determ_batch_size){
         cases = generate_swbitflip(data, len, offset, max);
         if(send_cases(cases)<0){
             return -1;
@@ -471,17 +472,17 @@ int determ_fuzz(char * data, unsigned long len, unsigned int id){
     else{
         unsigned long i = 0;
 
-        while(i < (max/100)){
-            cases = generate_swbitflip(data, len, offset, 100);
+        while(i < (max/determ_batch_size)){
+            cases = generate_swbitflip(data, len, offset, determ_batch_size);
             if(send_cases(cases) < 0){
                 return -1;
             }
-            offset = offset+100;
+            offset = offset+determ_batch_size;
             i++;
         }
-        if(max % 100 > 0){
+        if(max % determ_batch_size > 0){
             //printf("%d generating remainder len %lu start %lu count %lu\n", id, len, offset, max % 100);
-            cases = generate_swbitflip(data, len, offset, max % 100);
+            cases = generate_swbitflip(data, len, offset, max % determ_batch_size);
             if(send_cases(cases) < 0){
                 return -1;
             }
