@@ -459,7 +459,7 @@ cleanup:
 int determ_fuzz(char * data, unsigned long len, unsigned int id){
     unsigned long max = len << 3;
     unsigned long offset = 0;
-    unsigned int determ_batch_size = 100;
+    unsigned long determ_batch_size = strtol(CASE_COUNT, NULL, 10);
 
     testcase_t * cases;
 
