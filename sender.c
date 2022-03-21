@@ -299,7 +299,7 @@ unsigned char * next_protos_parse(size_t * outlen, const char * in){
     return out;
 }
 
-int send_unix(char * path, int port /* not used for UNIX sockets */, testcase_t * testcase){
+int send_unix(char * path, int port __attribute__((unused)), testcase_t * testcase){
     int sock = 0;
     struct sockaddr_un serv_addr;
     memset(&serv_addr, 0x00, sizeof(serv_addr));

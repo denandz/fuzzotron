@@ -325,7 +325,7 @@ void * call_monitor(){
 }
 
 // timeout monitor's flow - checks if the elapsed time has passed the defined timeout, and if so triggers a stop
-void * timer_job(void * args){
+void * timer_job(void * args __attribute__((unused))){
     time_t start_time;
 
     time(&start_time);
