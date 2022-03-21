@@ -37,7 +37,7 @@ extern int errno;
 #define RECV_TIMEOUT 1 // Timeout for SSL connections - default 1 second
 
 /*
- * send a char array down a
+ * send a testcase down a
  * udp socket
 */
 int send_udp(char * host, int port, testcase_t * testcase){
@@ -147,7 +147,7 @@ int send_udp(char * host, int port, testcase_t * testcase){
 }
 
 /*
- *    send a char array down a
+ *    send a testcase down a
  *    tcp socket.
 */
 int send_tcp(char * host, int port, testcase_t * testcase){
