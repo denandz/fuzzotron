@@ -20,6 +20,7 @@ Usage (log-monitor mode): ./fuzzotron --blab -g http_request -h 127.0.0.1 -p 80 
 Usage (process-monitor mode): ./fuzzotron --radamsa --directory testcases/ -h 127.0.0.1 -p 80 -P tcp -c 23123 -o output
 
 General Options:
+	-k		Number of seconds before fuzzing stops
 	-o		Output directory for crashes REQUIRED
 	-t		Number of worker threads
 	--trace		Use AFL style tracing. Single threaded only, see README.md
@@ -32,7 +33,6 @@ Generation Options:
 
 Connection Options:
 	-h		IP of host to connect to REQUIRED
-	-k		Number of seconds before fuzzing stops
 	-p		Port to connect to REQUIRED
 	-P		Protocol to use (tcp,udp) REQUIRED
 	--ssl		Use SSL for the connection

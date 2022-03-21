@@ -733,6 +733,7 @@ void help(){
     printf("Usage (log-monitor mode): ./fuzzotron --blab -g http_request -h 127.0.0.1 -p 80 -P tcp -m /var/log/messages -r 'segfault' -o output\n");
     printf("Usage (process-monitor mode): ./fuzzotron --radamsa --directory testcases/ -h 127.0.0.1 -p 80 -P tcp -c 23123 -o output\n\n");
     printf("General Options:\n");
+    printf("\t-k\t\tNumber of seconds before fuzzing stops\n");
     printf("\t-o\t\tOutput directory for crashes REQUIRED\n");
     printf("\t-t\t\tNumber of worker threads\n");
     printf("\t--trace\t\tUse AFL style tracing. Single threaded only, see README.md\n\n");
@@ -743,7 +744,6 @@ void help(){
     printf("\t--directory\tDirectory with original test cases\n\n");
     printf("Connection Options:\n");
     printf("\t-h\t\tIP of host to connect to REQUIRED\n");
-    printf("\t-k\t\tNumber of seconds before fuzzing stops\n");
     printf("\t-p\t\tPort to connect to REQUIRED\n");
     printf("\t-P\t\tProtocol to use (tcp,udp) REQUIRED\n");
     printf("\t--ssl\t\tUse SSL for the connection\n");
