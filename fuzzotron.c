@@ -416,7 +416,7 @@ void * worker(void * worker_args){
                 testcase_t * orig_entry = orig_cases;
 
                 while(orig_entry){
-                    if(determ_fuzz(orig_entry->data, orig_entry->len, thread_info->thread_id) < 0){
+                    if(determ_fuzz(orig_entry->data, orig_entry->len) < 0){
                         free_testcases(orig_cases);
                         goto cleanup;
                     }
@@ -456,7 +456,7 @@ cleanup:
 }
 
 // Perform determisistic mutations, id and max paramters for splitting work load across threads
-int determ_fuzz(char * data, unsigned long len, unsigned int id){
+int determ_fuzz(char * data, unsigned long len){ // }, unsigned int id){
     unsigned long max = len << 3;
     unsigned long offset = 0;
     unsigned long determ_batch_size = strtol(CASE_COUNT, NULL, 10);
@@ -533,7 +533,7 @@ int send_cases(void * cases){
                         save_case(entry->data, entry->len, exec_hash, fuzz.in_dir);
 
                         if(fuzz.gen != BLAB){
-                            determ_fuzz(entry->data, entry->len, 1); // attention defecit fuzzing
+                            determ_fuzz(entry->data, entry->len); // attention defecit fuzzing
                         }
                     }
                 }

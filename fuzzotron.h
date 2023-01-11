@@ -54,17 +54,15 @@ struct worker_args {
 
 int main(int argc, char** argv);
 void * call_monitor();
-void * timer_job();
-void * worker();
+void * timer_job(void * args);
+void * worker(void * worker_args);
 int pid_exists(int pid);
-int storeTestCases(char * prefix, char * crashId);
-int spawnProcess();
 void help();
 int run_check(char * script);
 int directory_exists(char * dir);
 int file_exists(char * file);
 int calibrate_case(testcase_t * testcase, uint8_t * trace_bits);
-int determ_fuzz(char * data, unsigned long len, unsigned int id);
+int determ_fuzz(char * data, unsigned long len);
 int send_cases(void * cases);
 int check_stop(void * cases, int result);
 

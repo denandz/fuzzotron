@@ -58,7 +58,6 @@ int send_udp(char * host, int port, testcase_t * testcase){
         SSL * ssl;
         BIO * bio;
         int ret;
-        unsigned long err;
         struct timeval timeout;
 
         ctx = SSL_CTX_new(DTLS_client_method());
@@ -305,7 +304,7 @@ int send_unix(char * path, int port __attribute__((unused)), testcase_t * testca
     memset(&serv_addr, 0x00, sizeof(serv_addr));
 
     serv_addr.sun_family = AF_LOCAL;
-    strncpy(serv_addr.sun_path, path, 108);
+    strncpy(serv_addr.sun_path, path, 107);
 
     if((sock = socket(PF_LOCAL, SOCK_STREAM, 0)) < 0){
         fatal("[!] Error: Could not create socket: %s\n", strerror(errno));
