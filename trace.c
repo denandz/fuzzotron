@@ -55,7 +55,7 @@ uint32_t wait_for_bitmap(const void* trace_bits){
 
         usleep(50000);
     }
-    //printf("bitmap stopped changing\n");
+
     return checksum;
 }
 

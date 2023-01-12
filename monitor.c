@@ -44,7 +44,6 @@ int monitor(char * file, char * regex){
                 stop = 1;
                 goto end;
             }
-           // printf("%s", buff);
             fflush(stdout);
         }
     }

@@ -410,8 +410,6 @@ void * worker(void * worker_args){
             // Perform some deterministic mutations before going off to radamsa.
             // currently limited to the first thread.
             if(deterministic == 1 && thread_info->thread_id == 1){
-                //printf("Performing deterministic mutations\n");
-
                 testcase_t * orig_cases = load_testcases(fuzz.in_dir, ""); // load all cases from the provided dir
                 testcase_t * orig_entry = orig_cases;
 
@@ -428,13 +426,11 @@ void * worker(void * worker_args){
                 }
                 free_testcases(orig_cases);
 
-                if(deterministic > 0){
-                    deterministic = 0;
-                    if(fuzz.shm_id)
-                        printf("[.] Deterministic mutations completed, sent: %lu paths: %lu\n", cases_sent, paths);
-                    else
-                        printf("[.] Deterministic mutations completed, sent: %lu\n", cases_sent);
-                }
+                deterministic = 0;
+                if(fuzz.shm_id)
+                    printf("[.] Deterministic mutations completed, sent: %lu paths: %lu\n", cases_sent, paths);
+                else
+                    printf("[.] Deterministic mutations completed, sent: %lu\n", cases_sent);
 
                 if(stop < 0) // an error or crash occured during the deteministic steps
                     break;
@@ -484,8 +480,8 @@ int determ_fuzz(char * data, unsigned long len){ // }, unsigned int id){
             offset = offset+determ_batch_size;
             i++;
         }
+        // generate remainder
         if(max % determ_batch_size > 0){
-            //printf("%d generating remainder len %lu start %lu count %lu\n", id, len, offset, max % 100);
             cases = generate_swbitflip(data, len, offset, max % determ_batch_size);
             if(send_cases(cases) < 0){
                 return -1;
@@ -633,8 +629,7 @@ int calibrate_case(testcase_t * testcase, uint8_t * trace_bits){
             return -1;
         }
         tmp_hash = wait_for_bitmap(trace_bits);
-        if(tmp_hash != hash){
-            // printf("[!] Non deterministic testcase detected\n");
+        if(tmp_hash != hash){ // non-deterministic testcase
             return 0;
         }
     }
