@@ -13,7 +13,7 @@ struct fuzzer_args fuzz;
 void help(){
     // Print the help and exit
     printf("Replay - Send a testcase, the same way Fuzzotron does\n\n");
-    printf("Usage: ./replay -h 127.0.0.1 -p 80 -P tcp -c 23123 some_file\n\n");
+    printf("Usage: ./replay -h 127.0.0.1 -p 80 -P tcp some_file\n\n");
     printf("\t-h\t\tIP of host to connect to\n");
     printf("\t-p\t\tPort to connect to\n");
     printf("\t-P\t\tProtocol to use (tcp,udp)\n");
@@ -39,7 +39,7 @@ int main(int argc, char ** argv){
     };
 
     int arg_index;
-    while((c = getopt_long(argc, argv, "h:p:g:t:m:c:P:r:w:s:z:o:", arg_options, &arg_index)) != -1){
+    while((c = getopt_long(argc, argv, "h:l:p:P:", arg_options, &arg_index)) != -1){
         switch(c){
             case 'h':
                 // define host
