@@ -1,7 +1,7 @@
 BLAB := $(shell command -v blab 2> /dev/null)
 RADAMSA := $(shell command -v radamsa 2> /dev/null)
 CFLAGS = -W -g -O3
-LIBS = -lpcre -lcrypto -lssl -lpthread
+LIBS = -lpcre -lssl -lcrypto -lpthread
 
 FUZZOTRON = fuzzotron
 REPLAY = replay
