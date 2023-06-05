@@ -77,7 +77,7 @@ static inline uint32_t hash32(const void* key, uint32_t len, uint32_t seed) {
 
   while (len--) {
 
-    u32 k1 = *data++;
+    uint32_t k1 = *data++;
 
     k1 *= 0xcc9e2d51;
     k1  = ROL32(k1, 15);
