@@ -29,7 +29,7 @@ General Options:
 
 Generation Options:
 	--blab		Use Blab for testcase generation
-	-g		Blab grammar to use
+	-g		Blab grammar to use - eg /usr/share/blab/html.blab
 	--radamsa	Use Radamsa for testcase generation
 	--directory	Directory with original test cases
 
@@ -80,6 +80,16 @@ An example to fuzz something like, I dunno, a DHCP server running on a router, w
 ### TCP_REPAIR mode
 
 Specifying the `--destroy` flag will put the TCP connections into `TCP_REPAIR` mode before closing, meaning no `FIN` packets will get sent. `TCP_REPAIR` requires the `CAP_NET_ADMIN` capability. If `--destroy` ends up stalling, you may have identified a slowloris style DOS condition where the target is blocking waiting for more data.
+
+## Testcases
+
+Testcases are raw packet data. In the exampole above, assuming we're fuzzing `HTTP/1.1`, the testcase directory would contain a sample set of HTTP requests. The quality of your starting corpus effects the fuzzers performance and good sampleset of various different packets that trigger different functionality are key to robust fuzz testing.
+
+There are a few ways to assemble your starting testcases. You can use the daemon with an appropriate client, capture the traffic with wireshark/tcpdump then extract the client packet data.  This is a good step to do regardless, especially in network protocols with state-machines which might need you to send specific packets before getting to the functionality you'd ike to fuzz (see the next section).
+
+[Wireshark's sample captures](https://wiki.wireshark.org/SampleCaptures) has a good sample set to work from for a bunch of common protocols. You can also see if a similar daemon is implemented in [OSS-Fuzz](https://github.com/google/oss-fuzz) and grab the example testcases from there.
+
+"Testcase Discovery Mode" is also supported, which lets you use a BLAB grammar and AFL-style tracing to procedurally generate testcases and store any that hit new code paths. More information is available further down in this readme.
 
 ## Connection Setup and Teardown
 
