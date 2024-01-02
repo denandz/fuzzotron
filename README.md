@@ -1,6 +1,6 @@
 # Fuzzotron
 
-Fuzzotron is a simple network fuzzer supporting TCP, UDP and multithreading. Radamsa and Blab are used for test case generation. Fuzzotron exists as a first-port-of-call network fuzzer, aiming for low setup overhead.
+Fuzzotron is a simple network fuzzer supporting TCP, UDP and multi-threading. Radamsa and Blab are used for test case generation. Fuzzotron exists as a first-port-of-call network fuzzer, aiming for low setup overhead.
 
 ## Install
 
@@ -53,7 +53,7 @@ Basic Fuzzotron usage would look like:
 ./fuzzotron --radamsa --directory testcases -h 127.0.0.1 -p 8080 -P tcp -c 15634 -o crashes
 ```
 
-The above will use radamsa to generate test cases based on the files in the `testcases` directory, and fire these test cases at `8080/tcp` on `localhost`. In the event that PID `15634` goes away, fuzzing will stop and the last 100 test cases kept in the `crashes` output directory. This would be used for something like nginx, running with a single worker and the workers PID being specified. Without a PID specified, Fuzzotron will keep running until a connection failure occurs, indicating the port is down. Fuzzotron currently does not automatically respawn the target after a crash is detected. The `-o` flag specifies the directory to spool the current test cases out to in the event of a crash.
+The above will use radamsa to generate test cases based on the files in the `testcases` directory, and fire these test cases at `8080/tcp` on `localhost`. In the event that PID `15634` goes away, fuzzing will stop and the last 100 test cases kept in the `crashes` output directory. This would be used for something like nginx, running with a single worker and the workers PID being specified. Without a PID specified, Fuzzotron will keep running until a connection failure occurs, indicating the port is down. Fuzzotron currently does not automatically re-spawn the target after a crash is detected. The `-o` flag specifies the directory to spool the current test cases out to in the event of a crash.
 
 When a crash occurs, the test case queues for each thread will be stored in `<output dir>/<thread pid>-<testcaseno>`. The replay utility can be used to send individual test cases. Replay uses the same sender code as Fuzzotron, so anything you've put into `callback.c` will also be triggered by replay.
 
@@ -83,9 +83,9 @@ Specifying the `--destroy` flag will put the TCP connections into `TCP_REPAIR` m
 
 ## Testcases
 
-Testcases are raw packet data. In the exampole above, assuming we're fuzzing `HTTP/1.1`, the testcase directory would contain a sample set of HTTP requests. The quality of your starting corpus effects the fuzzers performance and good sampleset of various different packets that trigger different functionality are key to robust fuzz testing.
+Testcases are raw packet data. In the TCP example above, assuming we're fuzzing `HTTP/1.1`, the testcase directory would contain a sample set of HTTP requests. The quality of your starting corpus effects the fuzzers performance and good sampleset of various different packets that trigger different functionality are key to robust fuzz testing.
 
-There are a few ways to assemble your starting testcases. You can use the daemon with an appropriate client, capture the traffic with wireshark/tcpdump then extract the client packet data.  This is a good step to do regardless, especially in network protocols with state-machines which might need you to send specific packets before getting to the functionality you'd ike to fuzz (see the next section).
+There are a few ways to assemble your starting testcases. You can use the daemon with an appropriate client, capture the traffic with wireshark/tcpdump then extract the client packet data.  This is a good step to do regardless, especially in network protocols with state-machines which might need you to send specific packets before getting to the functionality you'd like to fuzz (see the next section).
 
 [Wireshark's sample captures](https://wiki.wireshark.org/SampleCaptures) has a good sample set to work from for a bunch of common protocols. You can also see if a similar daemon is implemented in [OSS-Fuzz](https://github.com/google/oss-fuzz) and grab the example testcases from there.
 
