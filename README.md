@@ -18,6 +18,7 @@ FuzzoTron - A Fuzzing Harness built around OUSPG's Blab and Radamsa.
 
 Usage (crash-detect mode - blab): ./fuzzotron --blab -g http_request -h 127.0.0.1 -p 80 -P tcp -o output
 Usage (crash-detect mode - radamsa): ./fuzzotron --radamsa --directory testcases/ -h 127.0.0.1 -p 80 -P tcp -o output
+Usage (crash-detect mode unix socket - radamsa): ./fuzzotron --radamsa --directory testcases/ -h /tmp/something.sock -P unix -o output
 Usage (log-monitor mode): ./fuzzotron --blab -g http_request -h 127.0.0.1 -p 80 -P tcp -m /var/log/messages -r 'segfault' -o output
 Usage (process-monitor mode): ./fuzzotron --radamsa --directory testcases/ -h 127.0.0.1 -p 80 -P tcp -c 23123 -o output
 
@@ -34,9 +35,9 @@ Generation Options:
 	--directory	Directory with original test cases
 
 Connection Options:
-	-h		IP of host to connect to REQUIRED
-	-p		Port to connect to REQUIRED
-	-P		Protocol to use (tcp,udp) REQUIRED
+	-h		IP of host to connect to or path to unix domain socket REQUIRED
+	-p		Port to connect to REQUIRED for TCP and UDP
+	-P		Protocol to use (tcp,udp,unix) REQUIRED
 	--ssl		Use SSL for the connection
 	--destroy	Use TCP_REPAIR mode to immediately destroy the connection, do not send FIN/RST.
 

@@ -734,8 +734,8 @@ void help(){
     printf("\t-t\t\tNumber of worker threads\n");
     printf("\t--trace\t\tUse AFL style tracing. Single threaded only, see README.md\n\n");
     printf("Generation Options:\n");
-    printf("\t--blab\t\tUse Blab for testcase generation - eg /usr/share/blab/html.blab\n");
-    printf("\t-g\t\tBlab grammar to use\n");
+    printf("\t--blab\t\tUse Blab for testcase generation\n");
+    printf("\t-g\t\tBlab grammar to use - eg /usr/share/blab/html.blab\n");
     printf("\t--radamsa\tUse Radamsa for testcase generation\n");
     printf("\t--directory\tDirectory with original test cases\n\n");
     printf("Connection Options:\n");
