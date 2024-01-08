@@ -725,6 +725,7 @@ void help(){
     printf("FuzzoTron - A Fuzzing Harness built around OUSPG's Blab and Radamsa.\n\n");
     printf("Usage (crash-detect mode - blab): ./fuzzotron --blab -g http_request -h 127.0.0.1 -p 80 -P tcp -o output\n");
     printf("Usage (crash-detect mode - radamsa): ./fuzzotron --radamsa --directory testcases/ -h 127.0.0.1 -p 80 -P tcp -o output\n");
+    printf("Usage (crash-detect mode unix socket - radamsa): ./fuzzotron --radamsa --directory testcases/ -h /tmp/something.sock -P unix -o output\n");
     printf("Usage (log-monitor mode): ./fuzzotron --blab -g http_request -h 127.0.0.1 -p 80 -P tcp -m /var/log/messages -r 'segfault' -o output\n");
     printf("Usage (process-monitor mode): ./fuzzotron --radamsa --directory testcases/ -h 127.0.0.1 -p 80 -P tcp -c 23123 -o output\n\n");
     printf("General Options:\n");
@@ -738,9 +739,9 @@ void help(){
     printf("\t--radamsa\tUse Radamsa for testcase generation\n");
     printf("\t--directory\tDirectory with original test cases\n\n");
     printf("Connection Options:\n");
-    printf("\t-h\t\tIP of host to connect to REQUIRED\n");
-    printf("\t-p\t\tPort to connect to REQUIRED\n");
-    printf("\t-P\t\tProtocol to use (tcp,udp) REQUIRED\n");
+    printf("\t-h\t\tIP of host to connect to or path to unix domain socket REQUIRED\n");
+    printf("\t-p\t\tPort to connect to REQUIRED for TCP and UDP\n");
+    printf("\t-P\t\tProtocol to use (tcp,udp,unix) REQUIRED\n");
     printf("\t--ssl\t\tUse SSL for the connection\n");
     printf("\t--destroy\tUse TCP_REPAIR mode to immediately destroy the connection, do not send FIN/RST.\n\n");
     printf("Monitoring Options:\n");
