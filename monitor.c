@@ -13,6 +13,7 @@
 #include <sys/types.h>
 #include <sys/inotify.h>
 #include <errno.h>
+#include <unistd.h>
 
 #include "monitor.h"
 #include "util.h"
@@ -21,7 +22,7 @@
 // Currently does not implement file re-open when the file being monitored is overwritten...
 
 int monitor(char * file, char * regex){
-    char * buff;
+    char * buff = NULL;
     pcre *re;
     size_t len = 0;
     int check;
@@ -37,18 +38,25 @@ int monitor(char * file, char * regex){
     fseek(fh, 0, SEEK_END);
 
     for(;;){
-        while(getline(&buff, &len, fh) > 0){
+        ssize_t w;
+        while((w = getline(&buff, &len, fh)) > 0){
             check = parse_line(buff, re);
             if(check == 0){
                 printf("[!] REGEX matched! Exiting.\n");
                 stop = 1;
                 goto end;
             }
-            fflush(stdout);
         }
+
+        // Once EOF is set, getline will constantly return EOF.
+        // Call clearerr() to remove the feof flag and read more
+        // data as it's appended.
+        clearerr(fh);
+        usleep(10000);
     }
 
 end:
+    free(buff);
     fclose(fh);
     return 0;
 }
@@ -73,7 +81,7 @@ int parse_line(char* line, pcre *regex){
     return 0;
 }
 
-struct real_pcre * compile_regex(char* regex){
+pcre * compile_regex(char* regex){
     pcre *re;
     int erroroffset;
     const char *error;
