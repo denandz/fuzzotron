@@ -53,7 +53,7 @@ struct worker_args {
 };
 
 int main(int argc, char** argv);
-void * call_monitor();
+void * call_monitor(void * arg);
 void * timer_job(void * args);
 void * worker(void * worker_args);
 int pid_exists(int pid);
