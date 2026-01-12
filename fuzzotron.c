@@ -319,7 +319,7 @@ int main(int argc, char** argv) {
     return 1;
 }
 
-void * call_monitor(){
+void * call_monitor(void * arg){
     monitor(mon_args.file, mon_args.regex);
     return NULL;
 }
